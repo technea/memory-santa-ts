@@ -34,6 +34,9 @@ export const metadata: Metadata = {
   description: "A fun Christmas memory game for Farcaster",
   other: {
     "fc:frame": JSON.stringify(frameMetadata),
+    // --- BASE APP ID TAG START ---
+    "base:app_id": "6947b8b5d77c069a945be3bd", 
+    // --- BASE APP ID TAG END ---
   },
 };
 
