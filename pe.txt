@@ -1,0 +1,1 @@
+mongodb+srv://mongoUser:UOIACOnxsXPkbu2B@cluster0.1jiwpxx.mongodb.net/testdb?retryWrites=true&w=majority

@@ -1,21 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import WagmiProviderWrapper from "@/components/WagmiProviderWrapper";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// --- FARCASTER FRAME V2 METADATA START ---
 const frameMetadata = {
   version: "next",
-  imageUrl: "https://memory-santa-ts.vercel.app/santa-og.png", 
+  imageUrl: "https://memory-santa-ts.vercel.app/santa-og.png",
   button: {
     title: "Play Santa Game",
     action: {
@@ -27,28 +20,21 @@ const frameMetadata = {
     },
   },
 };
-// --- FARCASTER FRAME V2 METADATA END ---
 
 export const metadata: Metadata = {
   title: "Santa Memory Game",
   description: "A fun Christmas memory game for Farcaster",
   other: {
     "fc:frame": JSON.stringify(frameMetadata),
-    // --- BASE APP ID TAG START ---
-    "base:app_id": "6947b8b5d77c069a945be3bd", 
-    // --- BASE APP ID TAG END ---
+    "base:app_id": "6947b8b5d77c069a945be3bd",
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <WagmiProviderWrapper>{children}</WagmiProviderWrapper>
       </body>
     </html>
   );
