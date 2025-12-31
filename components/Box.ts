@@ -27,6 +27,11 @@ interface LevelColors {
   };
 }
 
+// Define NFT Component type
+interface NFTComponentType {
+  Component: React.ComponentType;
+}
+
 export default function Box({ 
   id, 
   index = 0, 
@@ -52,7 +57,8 @@ export default function Box({
   };
 
   // Safely get colors based on level
-  const colors = levelColors[Math.min(level, 5)] || levelColors[1];
+  const currentLevel = Math.min(Math.max(level, 1), 5);
+  const colors = levelColors[currentLevel] || levelColors[1];
 
   useEffect(() => {
     if (isMatched || isHintRevealed || isFlipped) {
@@ -93,10 +99,8 @@ export default function Box({
     }
 
     // Use default NFT components
-    const NFTComponent = NFT_COMPONENTS[value % NFT_COMPONENTS.length]?.Component;
-    
-    if (!NFTComponent) {
-      // Fallback component if NFT_COMPONENTS is empty
+    // Check if NFT_COMPONENTS exists and has elements
+    if (!NFT_COMPONENTS || NFT_COMPONENTS.length === 0) {
       return (
         <div className="w-full h-full flex items-center justify-center text-3xl">
           🎨
@@ -104,6 +108,19 @@ export default function Box({
       );
     }
 
+    // Safely access the NFT component
+    const nftIndex = Math.abs(value) % NFT_COMPONENTS.length;
+    const NFTItem = NFT_COMPONENTS[nftIndex] as NFTComponentType;
+    
+    if (!NFTItem || !NFTItem.Component) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-3xl">
+          🎨
+        </div>
+      );
+    }
+
+    const NFTComponent = NFTItem.Component;
     return <NFTComponent />;
   };
 
@@ -123,11 +140,11 @@ export default function Box({
         delay: index * 0.02, 
         duration: 0.4
       }}
-      whileHover={!isMatched ? { 
+      whileHover={!isMatched && !isFlipped ? { 
         scale: 1.08, 
         y: -8
       } : {}}
-      whileTap={!isMatched ? { scale: 0.92 } : {}}
+      whileTap={!isMatched && !isFlipped ? { scale: 0.92 } : {}}
     >
       {/* Outer Glow Effect */}
       <motion.div
@@ -151,14 +168,14 @@ export default function Box({
         transition={{ 
           duration: 0.6
         }}
-        style={{ transformStyle: 'preserve-3d' as const }}
+        style={{ transformStyle: 'preserve-3d' }}
       >
         
         {/* FRONT SIDE - Fancy Glass Effect */}
         <div
           className="absolute w-full h-full rounded-3xl flex items-center justify-center shadow-2xl overflow-hidden border border-white/30 dark:border-slate-600/50"
           style={{
-            backfaceVisibility: 'hidden' as const,
+            backfaceVisibility: 'hidden',
             background: `linear-gradient(135deg, rgba(0,82,255,0.15) 0%, rgba(0,212,255,0.1) 100%)`
           }}
         >
@@ -183,13 +200,13 @@ export default function Box({
           {/* Central Question Mark with Glow */}
           <motion.div
             className="relative z-20"
-            animate={isHovered && !isMatched ? {
-              scale: 1.1
+            animate={isHovered && !isMatched && !isFlipped ? {
+              scale: [1, 1.1, 1]
             } : {}}
             transition={{
               duration: 0.6,
               repeat: Infinity,
-              repeatType: "reverse" as const
+              repeatType: "reverse"
             }}
           >
             <span className="text-6xl md:text-7xl font-black text-white/90 dark:text-slate-100 filter drop-shadow-[0_0_20px_rgba(0,82,255,0.7)]">
@@ -211,7 +228,7 @@ export default function Box({
         <div
           className="absolute w-full h-full rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden border border-white/40"
           style={{ 
-            backfaceVisibility: 'hidden' as const, 
+            backfaceVisibility: 'hidden', 
             transform: 'rotateY(180deg)',
             background: `linear-gradient(135deg, ${colors.primary}20 0%, ${colors.secondary}10 100%)`
           }}
@@ -294,7 +311,7 @@ export default function Box({
             transition={{ 
               duration: 1, 
               repeat: Infinity,
-              repeatType: "reverse" as const
+              repeatType: "reverse"
             }}
           />
           
@@ -339,7 +356,7 @@ export default function Box({
           transition={{ 
             duration: 0.8, 
             repeat: Infinity,
-            repeatType: "reverse" as const
+            repeatType: "reverse"
           }}
           style={{ filter: 'blur(4px)' }}
         />
