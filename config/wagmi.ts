@@ -1,4 +1,3 @@
-import 'wagmi/window'; // Add this at the top
 import { createConfig, http } from 'wagmi'
 import { mainnet, sepolia } from 'wagmi/chains'
 import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors'
