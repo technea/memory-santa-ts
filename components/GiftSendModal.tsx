@@ -538,11 +538,11 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
     window.open(url, '_blank');
   };
 
-  const shortenAddress = (address: string | null): string => {
-    if (!address) return '';
-    if (address.length <= 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+const shortenAddress = (address: string | null | undefined): string => {
+  if (!address) return '';
+  if (address.length <= 10) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
 
   const selectFriend = (friend: Friend): void => {
     setRecipientAddress(friend.address);
@@ -629,7 +629,7 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
                 </div>
                 <div className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
                   <div className="text-lg font-bold text-white">
-                    {isConnected ? shortenAddress(address) : 'Not Connected'}
+                    {isConnected && address ? shortenAddress(address) : 'Not Connected'}
                   </div>
                   <div className="text-xs text-gray-400">Wallet</div>
                 </div>
