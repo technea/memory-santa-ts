@@ -7,8 +7,10 @@ declare global {
     ethereum?: any;
   }
 }
+
 import { motion, AnimatePresence } from 'framer-motion';
-import { ethers } from 'ethers';
+// REPLACE ETHERS WITH VIEM UTILITIES
+import { parseEther, formatEther } from 'viem'; 
 import { 
   Sparkles, Gift, TreePine, Snowflake, Star, Zap, Users, 
   Trophy, Coins, Package, Heart, Share2, X, Check 
