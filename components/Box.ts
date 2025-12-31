@@ -75,7 +75,7 @@ export default function Box({
     }
   };
 
-  // Type-safe NFT Component renderer
+  // Type-safe NFT Component renderer with explicit return type
   const renderNFTComponent = (): ReactElement => {
     // Special case for Santa card (value 999)
     if (value === 999) {
