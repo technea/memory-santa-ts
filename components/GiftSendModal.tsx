@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract, useReadContract } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract, useReadContract, useBalance } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { 
   Sparkles, Gift, TreePine, Snowflake, Star, Zap, Users, 
@@ -152,6 +152,11 @@ export default function BaseSantaGiftModal({
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
+  
+  // Add useBalance hook near your other Wagmi hooks
+  const { data: balanceData } = useBalance({
+    address: address,
+  });
 
   // State for form inputs
   const [recipientAddress, setRecipientAddress] = useState<string>('');
@@ -335,29 +340,6 @@ export default function BaseSantaGiftModal({
     };
   }, []);
 
-  // Fetch balance when wallet is connected
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (isConnected && address) {
-        try {
-          const balance = await window.ethereum?.request({
-            method: 'eth_getBalance',
-            params: [address, 'latest']
-          });
-          if (balance) {
-            const balanceInEth = formatEther(BigInt(balance));
-            setUserBalance(parseFloat(balanceInEth).toFixed(4));
-          }
-        } catch (err) {
-          console.error('Failed to fetch balance:', err);
-        }
-      }
-    };
-    
-    if (isOpen) {
-      fetchBalance();
-    }
-  }, [isOpen, isConnected, address]);
 
   const sendTestTransaction = async (): Promise<void> => {
     try {
@@ -653,7 +635,7 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
                 </div>
                 <div className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
                   <div className="text-lg font-bold text-white">
-                    {isConnected ? `${userBalance} ETH` : '0 ETH'}
+                    {isConnected && balanceData ? `${formatEther(balanceData.value)} ETH` : '0 ETH'}
                   </div>
                   <div className="text-xs text-gray-400">Balance</div>
                 </div>
