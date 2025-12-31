@@ -3,8 +3,16 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import WagmiProviderWrapper from "@/components/WagmiProviderWrapper";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({ 
+  variable: "--font-geist-sans", 
+  subsets: ["latin"],
+  preload: false // Disable preloading to avoid network issues
+});
+const geistMono = Geist_Mono({ 
+  variable: "--font-geist-mono", 
+  subsets: ["latin"],
+  preload: false // Disable preloading to avoid network issues
+});
 
 const frameMetadata = {
   version: "next",

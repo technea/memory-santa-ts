@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 import { motion, AnimatePresence } from 'framer-motion';
 import { ethers } from 'ethers';
 import { 
@@ -29,7 +35,7 @@ interface GiftOption {
   id: string;
   name: string;
   description: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   color: string;
   type: string;
   price: string;
@@ -347,16 +353,25 @@ export default function BaseSantaGiftModal({
 
   const checkExistingWallet = async (): Promise<void> => {
     try {
+      // 1. Check if window and ethereum exist
       if (typeof window !== 'undefined' && window.ethereum) {
         const provider = new ethers.BrowserProvider(window.ethereum);
+        
+        // listAccounts returns an array of Signers in v6
         const accounts = await provider.listAccounts();
         
         if (accounts.length > 0) {
+          // FIXED: Use the first account/signer
+          const signer = accounts[0];
+          const address = signer.address; // v6 mein direct .address mil jata hai
+          
           const walletType = detectWalletType(window.ethereum);
-          const address = accounts[0].address;
+          
+          // Fetch balance using provider
           const balance = await provider.getBalance(address);
           const balanceInEth = ethers.formatEther(balance);
           
+          // Update state
           setWalletState({
             isConnected: true,
             walletType: walletType,
@@ -367,10 +382,16 @@ export default function BaseSantaGiftModal({
           });
           
           setWalletProvider(provider);
+        } else {
+          // Agar koi account connected nahi hai toh loading khatam karein
+          setWalletState(prev => ({ ...prev, isLoading: false }));
         }
+      } else {
+        setWalletState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (err) {
       console.log('Wallet check error:', err);
+      setWalletState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -843,6 +864,7 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
                   onClick={onClose}
                   className="p-3 rounded-xl bg-gradient-to-r from-gray-800 to-gray-900 border border-white/10 hover:border-red-500/50 transition-all"
                   disabled={isSending}
+                  aria-label="Close gift modal"
                 >
                   <X className="w-6 h-6 text-white" />
                 </button>

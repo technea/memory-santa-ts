@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect, ReactElement } from 'react';
+import { useState, useEffect, ReactElement, ComponentType } from 'react';
 import { NFT_COMPONENTS } from './NFTAvatars';
 
 // Define props interface
@@ -27,9 +27,9 @@ interface LevelColors {
   };
 }
 
-// Define NFT Component type
-interface NFTComponentType {
-  Component: React.ComponentType;
+// Type for NFT_COMPONENTS array items
+interface NFTComponentItem {
+  Component: ComponentType;
 }
 
 export default function Box({ 
@@ -57,8 +57,7 @@ export default function Box({
   };
 
   // Safely get colors based on level
-  const currentLevel = Math.min(Math.max(level, 1), 5);
-  const colors = levelColors[currentLevel] || levelColors[1];
+  const colors = levelColors[Math.min(level, 5)] || levelColors[1];
 
   useEffect(() => {
     if (isMatched || isHintRevealed || isFlipped) {
@@ -75,16 +74,14 @@ export default function Box({
     }
   };
 
-  // Type-safe NFT Component renderer with explicit return type
+  // Type-safe NFT Component renderer
   const renderNFTComponent = (): ReactElement => {
-    // Special case for Santa card (value 999)
+    // 1. Special case for Santa card (value 999)
     if (value === 999) {
       return (
         <motion.div
           className="w-full h-full flex items-center justify-center text-7xl"
-          animate={{ 
-            scale: [1, 1.2, 1]
-          }}
+          animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
           🎅
@@ -92,14 +89,13 @@ export default function Box({
       );
     }
 
-    // Use custom nftComponent if provided
+    // 2. Use custom nftComponent if provided
     if (nftComponent) {
       const CustomComponent = nftComponent;
       return <CustomComponent />;
     }
 
-    // Use default NFT components
-    // Check if NFT_COMPONENTS exists and has elements
+    // 3. Handle missing/empty NFT_COMPONENTS
     if (!NFT_COMPONENTS || NFT_COMPONENTS.length === 0) {
       return (
         <div className="w-full h-full flex items-center justify-center text-3xl">
@@ -108,11 +104,12 @@ export default function Box({
       );
     }
 
-    // Safely access the NFT component
+    // Safely get the NFT component
     const nftIndex = Math.abs(value) % NFT_COMPONENTS.length;
-    const NFTItem = NFT_COMPONENTS[nftIndex] as NFTComponentType;
+    const nftItem = NFT_COMPONENTS[nftIndex] as NFTComponentItem;
     
-    if (!NFTItem || !NFTItem.Component) {
+    // Check if the item and Component exist
+    if (!nftItem || !nftItem.Component) {
       return (
         <div className="w-full h-full flex items-center justify-center text-3xl">
           🎨
@@ -120,8 +117,8 @@ export default function Box({
       );
     }
 
-    const NFTComponent = NFTItem.Component;
-    return <NFTComponent />;
+    const Component = nftItem.Component;
+    return <Component />;
   };
 
   return (
@@ -140,11 +137,11 @@ export default function Box({
         delay: index * 0.02, 
         duration: 0.4
       }}
-      whileHover={!isMatched && !isFlipped ? { 
+      whileHover={!isMatched ? { 
         scale: 1.08, 
         y: -8
       } : {}}
-      whileTap={!isMatched && !isFlipped ? { scale: 0.92 } : {}}
+      whileTap={!isMatched ? { scale: 0.92 } : {}}
     >
       {/* Outer Glow Effect */}
       <motion.div
@@ -168,21 +165,18 @@ export default function Box({
         transition={{ 
           duration: 0.6
         }}
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ transformStyle: 'preserve-3d' as const }}
       >
         
         {/* FRONT SIDE - Fancy Glass Effect */}
         <div
           className="absolute w-full h-full rounded-3xl flex items-center justify-center shadow-2xl overflow-hidden border border-white/30 dark:border-slate-600/50"
           style={{
-            backfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden' as const,
             background: `linear-gradient(135deg, rgba(0,82,255,0.15) 0%, rgba(0,212,255,0.1) 100%)`
           }}
         >
-          {/* Animated Glass Texture */}
           <div className="absolute inset-0 backdrop-blur-xl saturate-150" />
-
-          {/* Dynamic Shine Effect */}
           <motion.div
             className="absolute inset-[-200%] bg-gradient-to-r from-transparent via-white/30 dark:via-slate-300/20 to-transparent rotate-12"
             animate={{ x: ['-100%', '100%'] }}
@@ -193,20 +187,15 @@ export default function Box({
               delay: index * 0.1
             }}
           />
-
-          {/* Frosted Glass Effect */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/10 dark:from-slate-300/5 dark:to-slate-400/10" />
 
-          {/* Central Question Mark with Glow */}
           <motion.div
             className="relative z-20"
-            animate={isHovered && !isMatched && !isFlipped ? {
-              scale: [1, 1.1, 1]
-            } : {}}
+            animate={isHovered && !isMatched ? { scale: 1.1 } : {}}
             transition={{
               duration: 0.6,
               repeat: Infinity,
-              repeatType: "reverse"
+              repeatType: "reverse" as const
             }}
           >
             <span className="text-6xl md:text-7xl font-black text-white/90 dark:text-slate-100 filter drop-shadow-[0_0_20px_rgba(0,82,255,0.7)]">
@@ -214,13 +203,10 @@ export default function Box({
             </span>
           </motion.div>
 
-          {/* Corner Accents */}
           <div className="absolute top-3 left-3 w-4 h-4 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-70" />
           <div className="absolute top-3 right-3 w-4 h-4 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 opacity-70" />
           <div className="absolute bottom-3 left-3 w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 opacity-70" />
           <div className="absolute bottom-3 right-3 w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 opacity-70" />
-
-          {/* Glass Reflection */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-transparent" />
         </div>
 
@@ -228,68 +214,44 @@ export default function Box({
         <div
           className="absolute w-full h-full rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden border border-white/40"
           style={{ 
-            backfaceVisibility: 'hidden', 
+            backfaceVisibility: 'hidden' as const, 
             transform: 'rotateY(180deg)',
             background: `linear-gradient(135deg, ${colors.primary}20 0%, ${colors.secondary}10 100%)`
           }}
         >
-          {/* Premium Glass Background */}
           <div className="absolute inset-0 backdrop-blur-2xl saturate-200" />
-          
-          {/* Central Glow */}
           <div className="absolute w-28 h-28 bg-white/40 rounded-full blur-2xl" />
 
-          {/* NFT Content Container */}
           <motion.div
             className="relative z-30 w-full h-full flex items-center justify-center p-5"
             initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ 
-              scale: 1, 
-              opacity: 1
-            }}
-            transition={{ 
-              delay: 0.15,
-              duration: 0.6
-            }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.15, duration: 0.6 }}
           >
             <div className="relative w-full h-full flex items-center justify-center">
               {renderNFTComponent()}
-              
-              {/* Mini Border Effect */}
               <div className="absolute inset-2 rounded-2xl border border-white/20" />
             </div>
           </motion.div>
 
-          {/* Floating Particles for Matched Cards */}
           {isMatched && (
             <>
               {[...Array(3)].map((_, i) => (
                 <motion.div
                   key={i}
                   className="absolute w-2 h-2 rounded-full bg-white"
-                  initial={{ 
-                    x: '50%', 
-                    y: '50%', 
-                    scale: 0, 
-                    opacity: 1 
-                  }}
+                  initial={{ x: '50%', y: '50%', scale: 0, opacity: 1 }}
                   animate={{ 
                     x: `${50 + Math.cos(i * 120 * Math.PI/180) * 40}%`,
                     y: `${50 + Math.sin(i * 120 * Math.PI/180) * 40}%`,
                     scale: [0, 1, 0],
                     opacity: [1, 0.5, 0]
                   }}
-                  transition={{ 
-                    duration: 1.5, 
-                    repeat: Infinity,
-                    delay: i * 0.3
-                  }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
                 />
               ))}
             </>
           )}
-
-          {/* Top Reflection */}
           <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-white/40 to-transparent opacity-30" />
         </div>
       </motion.div>
@@ -304,39 +266,21 @@ export default function Box({
               filter: 'blur(10px)'
             }}
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: [0.8, 1],
-              scale: [1, 1.1]
-            }}
-            transition={{ 
-              duration: 1, 
-              repeat: Infinity,
-              repeatType: "reverse"
-            }}
+            animate={{ opacity: [0.8, 1], scale: [1, 1.1] }}
+            transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" as const }}
           />
-          
-          {/* Floating Stars */}
           {[...Array(2)].map((_, i) => (
             <motion.div
               key={`star-${i}`}
               className="absolute text-xl"
-              initial={{ 
-                x: '50%', 
-                y: '50%', 
-                scale: 0, 
-                opacity: 0 
-              }}
+              initial={{ x: '50%', y: '50%', scale: 0, opacity: 0 }}
               animate={{ 
                 x: `${50 + Math.cos(i * 180 * Math.PI/180) * 60}%`,
                 y: `${50 + Math.sin(i * 180 * Math.PI/180) * 60}%`,
                 scale: [0, 1.5, 0],
                 opacity: [1, 0.5, 0]
               }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity,
-                delay: i * 0.5
-              }}
+              transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
             >
               ⭐
             </motion.div>
@@ -349,15 +293,8 @@ export default function Box({
         <motion.div
           className="absolute -inset-1 rounded-[2rem] border-2 border-yellow-400 z-[-1]"
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ 
-            opacity: [0.7, 1],
-            scale: [1, 1.05]
-          }}
-          transition={{ 
-            duration: 0.8, 
-            repeat: Infinity,
-            repeatType: "reverse"
-          }}
+          animate={{ opacity: [0.7, 1], scale: [1, 1.05] }}
+          transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" as const }}
           style={{ filter: 'blur(4px)' }}
         />
       )}

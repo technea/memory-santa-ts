@@ -1171,7 +1171,7 @@ export default function BaseMemoryGame() {
               initial={{ y: 100 }} animate={{ y: 0 }}
               className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
             >
-              <button onClick={() => setShowMintModal(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}>
+              <button onClick={() => setShowMintModal(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Mint Modal">
                 <X size={22} />
               </button>
               
@@ -1251,7 +1251,7 @@ export default function BaseMemoryGame() {
               initial={{ y: 100 }} animate={{ y: 0 }}
               className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
             >
-              <button onClick={() => setShowLearning(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}><X size={22}/></button>
+              <button onClick={() => setShowLearning(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Learning Modal"><X size={22}/></button>
               <div className={`w-14 h-14 ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'} rounded-2xl flex items-center justify-center mb-5`}>
                 {LEVEL_LEARNING[currentLevel]?.icon}
               </div>
