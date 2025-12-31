@@ -1,20 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
-
-import { motion, AnimatePresence } from 'framer-motion';
-// REPLACE ETHERS WITH VIEM UTILITIES
-import { parseEther, formatEther } from 'viem'; 
+import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract, useReadContract } from 'wagmi';
+import { parseEther, formatEther } from 'viem';
 import { 
   Sparkles, Gift, TreePine, Snowflake, Star, Zap, Users, 
   Trophy, Coins, Package, Heart, Share2, X, Check 
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import 'wagmi/window'; // Add this for TypeScript window.ethereum types
 
 // ===== TYPE DEFINITIONS =====
 
@@ -152,6 +146,13 @@ export default function BaseSantaGiftModal({
   currentLevel = 1,
   totalGiftsSent = 0
 }: BaseSantaGiftModalProps) {
+  // Use Wagmi hooks
+  const { address, isConnected, chain } = useAccount();
+  const { connectors, connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { switchChain } = useSwitchChain();
+  const { writeContract } = useWriteContract();
+
   // State for form inputs
   const [recipientAddress, setRecipientAddress] = useState<string>('');
   const [giftMessage, setGiftMessage] = useState<string>('');
@@ -161,28 +162,16 @@ export default function BaseSantaGiftModal({
   const [txStatus, setTxStatus] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const [successData, setSuccessData] = useState<SuccessData | null>(null);
-  const [walletProvider, setWalletProvider] = useState<ethers.BrowserProvider | null>(null);
   const [showWalletOptions, setShowWalletOptions] = useState<boolean>(false);
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [useTestMode, setUseTestMode] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'gifts' | 'friends' | 'leaderboard'>('gifts');
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [referralCode, setReferralCode] = useState<string>(`SANTA${currentLevel}`);
+  const [userBalance, setUserBalance] = useState<string>('0');
 
   // Animated snowflakes
   const [snowflakes, setSnowflakes] = useState<Snowflake[]>([]);
   const snowIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Wallet state
-  const [walletState, setWalletState] = useState<WalletState>({
-    isConnected: false,
-    walletType: null,
-    address: null,
-    isLoading: false,
-    error: null,
-    balance: '0'
-  });
-
   // Transaction state
   const [transactionState, setTransactionState] = useState<TransactionState>({
     status: 'idle',
@@ -346,132 +335,29 @@ export default function BaseSantaGiftModal({
     };
   }, []);
 
-  // Detect wallet on modal open
+  // Fetch balance when wallet is connected
   useEffect(() => {
-    if (isOpen) {
-      checkExistingWallet();
-    }
-  }, [isOpen]);
-
-  const checkExistingWallet = async (): Promise<void> => {
-    try {
-      // 1. Check if window and ethereum exist
-      if (typeof window !== 'undefined' && window.ethereum) {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        
-        // listAccounts returns an array of Signers in v6
-        const accounts = await provider.listAccounts();
-        
-        if (accounts.length > 0) {
-          // FIXED: Use the first account/signer
-          const signer = accounts[0];
-          const address = signer.address; // v6 mein direct .address mil jata hai
-          
-          const walletType = detectWalletType(window.ethereum);
-          
-          // Fetch balance using provider
-          const balance = await provider.getBalance(address);
-          const balanceInEth = ethers.formatEther(balance);
-          
-          // Update state
-          setWalletState({
-            isConnected: true,
-            walletType: walletType,
-            address: address,
-            isLoading: false,
-            error: null,
-            balance: parseFloat(balanceInEth).toFixed(4)
+    const fetchBalance = async () => {
+      if (isConnected && address) {
+        try {
+          const balance = await window.ethereum?.request({
+            method: 'eth_getBalance',
+            params: [address, 'latest']
           });
-          
-          setWalletProvider(provider);
-        } else {
-          // Agar koi account connected nahi hai toh loading khatam karein
-          setWalletState(prev => ({ ...prev, isLoading: false }));
+          if (balance) {
+            const balanceInEth = formatEther(BigInt(balance));
+            setUserBalance(parseFloat(balanceInEth).toFixed(4));
+          }
+        } catch (err) {
+          console.error('Failed to fetch balance:', err);
         }
-      } else {
-        setWalletState(prev => ({ ...prev, isLoading: false }));
       }
-    } catch (err) {
-      console.log('Wallet check error:', err);
-      setWalletState(prev => ({ ...prev, isLoading: false }));
+    };
+    
+    if (isOpen) {
+      fetchBalance();
     }
-  };
-
-  const detectWalletType = (provider: any): string => {
-    if (provider.isMetaMask) return 'metamask';
-    if (provider.isCoinbaseWallet) return 'coinbase';
-    if (provider.isRabby) return 'rabby';
-    return 'injected';
-  };
-
-  const connectWallet = async (walletType: string): Promise<void> => {
-    try {
-      setWalletState(prev => ({ ...prev, isLoading: true, error: null }));
-      setShowWalletOptions(false);
-
-      let provider: any;
-      
-      switch (walletType) {
-        case 'metamask':
-          if (!window.ethereum) {
-            window.open('https://metamask.io/download/', '_blank');
-            throw new Error('Please install MetaMask first');
-          }
-          provider = window.ethereum;
-          break;
-          
-        case 'coinbase':
-          if ((window as any).coinbaseWalletExtension) {
-            provider = (window as any).coinbaseWalletExtension;
-          } else if (window.ethereum?.isCoinbaseWallet) {
-            provider = window.ethereum;
-          } else {
-            window.open('https://www.coinbase.com/wallet', '_blank');
-            throw new Error('Please install Coinbase Wallet first');
-          }
-          break;
-          
-        default:
-          if (!window.ethereum) {
-            throw new Error('Please install a Web3 wallet first');
-          }
-          provider = window.ethereum;
-      }
-
-      await provider.request({ method: 'eth_requestAccounts' });
-      const ethersProvider = new ethers.BrowserProvider(provider);
-      const accounts = await ethersProvider.listAccounts();
-      
-      if (accounts.length === 0) {
-        throw new Error('No accounts found');
-      }
-
-      const address = accounts[0].address;
-      const balance = await ethersProvider.getBalance(address);
-      const balanceInEth = ethers.formatEther(balance);
-      const detectedType = detectWalletType(provider);
-
-      setWalletState({
-        isConnected: true,
-        walletType: detectedType,
-        address: address,
-        isLoading: false,
-        error: null,
-        balance: parseFloat(balanceInEth).toFixed(4)
-      });
-
-      setWalletProvider(ethersProvider);
-      setError('');
-
-    } catch (err: any) {
-      setWalletState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: err.message || 'Failed to connect wallet'
-      }));
-      setError(err.message || 'Failed to connect wallet');
-    }
-  };
+  }, [isOpen, isConnected, address]);
 
   const sendTestTransaction = async (): Promise<void> => {
     try {
@@ -510,7 +396,7 @@ export default function BaseSantaGiftModal({
         points: selectedGiftData.points,
         chain: 'Test Mode',
         timestamp: new Date().toISOString(),
-        sender: walletState.address || 'Test Sender',
+        sender: address || 'Test Sender',
         level: currentLevel,
         txHash: fakeTxHash,
         tokenId: null,
@@ -542,7 +428,7 @@ export default function BaseSantaGiftModal({
 
   const sendRealTransaction = async (): Promise<void> => {
     try {
-      if (!walletProvider || !walletState.isConnected || !walletState.address) {
+      if (!isConnected || !address) {
         throw new Error('Please connect wallet first');
       }
 
@@ -551,109 +437,43 @@ export default function BaseSantaGiftModal({
         throw new Error('Selected gift not found');
       }
       
+      // Check if we're on Base Sepolia
+      if (chain?.id !== 84532) { // Base Sepolia chain ID
+        try {
+          await switchChain({ chainId: 84532 });
+        } catch (switchError: any) {
+          setError('Please switch to Base Sepolia network in your wallet');
+          return;
+        }
+      }
+      
       setTxStatus('Starting transaction on Base...');
       setIsSending(true);
-
-      const signer = await walletProvider.getSigner();
-      const contract = new ethers.Contract(
-        REAL_CONTRACT_ADDRESS,
-        REAL_CONTRACT_ABI,
-        signer
-      );
 
       if (selectedGift === 'nft' || selectedGift === 'badge') {
         setTxStatus('Minting NFT on Base Sepolia...');
         
         const tokenURI = `ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi`;
         const priceInEth = selectedGift === 'nft' ? "0.001" : "0.0005";
-        const txValue = ethers.parseEther(priceInEth);
         
-        const tx = await contract.mintNFT(recipientAddress, tokenURI, {
-          value: txValue
+        writeContract({
+          address: REAL_CONTRACT_ADDRESS,
+          abi: REAL_CONTRACT_ABI,
+          functionName: 'mintNFT',
+          args: [recipientAddress as `0x${string}`, tokenURI],
+          value: parseEther(priceInEth),
         });
-        
-        setTxStatus('Transaction submitted to blockchain...');
-        setTransactionState({
-          status: 'submitted',
-          hash: tx.hash,
-          error: null
-        });
-        
-        const receipt = await tx.wait();
-        
-        if (receipt.status === 1) {
-          const giftData: SuccessData = {
-            recipient: recipientAddress,
-            message: giftMessage,
-            giftType: selectedGift,
-            giftName: selectedGiftData.name,
-            amount: selectedGiftData.price,
-            points: selectedGiftData.points,
-            chain: 'Base Sepolia',
-            timestamp: new Date().toISOString(),
-            sender: walletState.address,
-            level: currentLevel,
-            txHash: tx.hash,
-            tokenId: "1",
-            status: 'confirmed',
-            isVirtual: false,
-            isTestMode: false
-          };
-          
-          setSuccessData(giftData);
-          setShowSuccess(true);
-          setTxStatus('NFT minted successfully!');
-          
-          if (onSendGift) {
-            onSendGift(giftData);
-          }
-        }
         
       } else if (selectedGift === 'eth') {
         setTxStatus('Sending ETH on Base Sepolia...');
         
-        const txValue = ethers.parseEther("0.01");
-        
-        const tx = await contract.sendETH(recipientAddress, giftMessage, {
-          value: txValue
+        writeContract({
+          address: REAL_CONTRACT_ADDRESS,
+          abi: REAL_CONTRACT_ABI,
+          functionName: 'sendETH',
+          args: [recipientAddress as `0x${string}`, giftMessage],
+          value: parseEther("0.01"),
         });
-        
-        setTxStatus('Transaction submitted to blockchain...');
-        setTransactionState({
-          status: 'submitted',
-          hash: tx.hash,
-          error: null
-        });
-        
-        const receipt = await tx.wait();
-        
-        if (receipt.status === 1) {
-          const giftData: SuccessData = {
-            recipient: recipientAddress,
-            message: giftMessage,
-            giftType: selectedGift,
-            giftName: selectedGiftData.name,
-            amount: selectedGiftData.price,
-            points: selectedGiftData.points,
-            chain: 'Base Sepolia',
-            timestamp: new Date().toISOString(),
-            sender: walletState.address,
-            level: currentLevel,
-            txHash: tx.hash,
-            tokenId: null,
-            status: 'confirmed',
-            isVirtual: false,
-            isTestMode: false
-          };
-          
-          setSuccessData(giftData);
-          setShowSuccess(true);
-          setTxStatus('ETH sent successfully!');
-          
-          if (onSendGift) {
-            onSendGift(giftData);
-          }
-        }
       }
       
     } catch (error: any) {
@@ -677,19 +497,6 @@ export default function BaseSantaGiftModal({
     }
   };
 
-  const disconnectWallet = (): void => {
-    setWalletState({
-      isConnected: false,
-      walletType: null,
-      address: null,
-      isLoading: false,
-      error: null,
-      balance: '0'
-    });
-    setWalletProvider(null);
-    setError('');
-  };
-
   const handleSendGift = async (): Promise<void> => {
     setError('');
     
@@ -698,7 +505,7 @@ export default function BaseSantaGiftModal({
       return;
     }
 
-    if (!ethers.isAddress(recipientAddress)) {
+    if (!recipientAddress.startsWith('0x') || recipientAddress.length !== 42) {
       setError('Invalid Ethereum address');
       return;
     }
@@ -712,56 +519,12 @@ export default function BaseSantaGiftModal({
     if (selectedGiftData.testMode) {
       await sendTestTransaction();
     } else {
-      if (!walletState.isConnected) {
+      if (!isConnected) {
         setShowWalletOptions(true);
         return;
       }
       
-      try {
-        if (!window.ethereum) {
-          setError('Please install MetaMask wallet');
-          return;
-        }
-        
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        const baseSepoliaChainId = '0x14a34';
-        
-        if (chainId !== baseSepoliaChainId) {
-          setError('Please switch to Base Sepolia network');
-          
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: baseSepoliaChainId }],
-            });
-          } catch (switchError: any) {
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: baseSepoliaChainId,
-                  chainName: 'Base Sepolia',
-                  nativeCurrency: {
-                    name: 'ETH',
-                    symbol: 'ETH',
-                    decimals: 18
-                  },
-                  rpcUrls: ['https://sepolia.base.org'],
-                  blockExplorerUrls: ['https://sepolia.basescan.org']
-                }]
-              });
-            } else {
-              throw switchError;
-            }
-          }
-          return;
-        }
-        
-        await sendRealTransaction();
-        
-      } catch (error: any) {
-        setError(`Network error: ${error.message}`);
-      }
+      await sendRealTransaction();
     }
   };
 
@@ -884,13 +647,13 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
                 </div>
                 <div className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
                   <div className="text-lg font-bold text-white">
-                    {walletState.isConnected ? shortenAddress(walletState.address) : 'Not Connected'}
+                    {isConnected ? shortenAddress(address) : 'Not Connected'}
                   </div>
                   <div className="text-xs text-gray-400">Wallet</div>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
                   <div className="text-lg font-bold text-white">
-                    {walletState.isConnected ? `${walletState.balance} ETH` : '0 ETH'}
+                    {isConnected ? `${userBalance} ETH` : '0 ETH'}
                   </div>
                   <div className="text-xs text-gray-400">Balance</div>
                 </div>
@@ -1110,7 +873,7 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
                 </div>
 
                 {/* Wallet Connection */}
-                {!walletState.isConnected && (
+                {!isConnected && (
                   <div className="mb-6 p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10">
                     <p className="text-yellow-300 text-sm text-center">
                       Connect wallet to send real gifts on Base blockchain
@@ -1121,6 +884,39 @@ ${successData.txHash ? `Tx: ${successData.txHash.slice(0, 10)}...` : ''}
                     >
                       Connect Wallet
                     </button>
+                  </div>
+                )}
+
+                {/* Wallet Options Modal */}
+                {showWalletOptions && (
+                  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1001]">
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-md w-full"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-white">Connect Wallet</h3>
+                        <button onClick={() => setShowWalletOptions(false)}>
+                          <X className="w-6 h-6 text-gray-400" />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {connectors.map((connector) => (
+                          <button
+                            key={connector.uid}
+                            onClick={() => {
+                              connect({ connector });
+                              setShowWalletOptions(false);
+                            }}
+                            className="w-full p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white text-left"
+                          >
+                            <div className="font-medium">{connector.name}</div>
+                            <div className="text-sm text-gray-400">{connector.name}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
                   </div>
                 )}
 
