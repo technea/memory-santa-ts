@@ -36,6 +36,10 @@ export const metadata: Metadata = {
   other: {
     "fc:frame": JSON.stringify(frameMetadata),
   },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

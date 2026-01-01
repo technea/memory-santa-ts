@@ -8,26 +8,27 @@ export async function GET() {
       signature: "DVpeyxOEFqAZUzQpSR+XNn0xoTJP9WkDcsOJ58UTvnssay4nVUj/eCfcSaASYpU52ayJUxg6KNusmF50bIZdTxw="
     },
     miniapp: {
-      version: "1",
-      name: "Santa Memory 2026",
+      version: "1.0.0",
+      name: "Memory 2026",
       homeUrl: "https://memory-santa-ts-uzz5.vercel.app", 
-      iconUrl: "https://memory-santa-ts-uzz5.vercel.app/santa-og.png", 
-      // missing fields added below
-      imageUrl: "https://memory-santa-ts-uzz5.vercel.app/santa-og.png",
-      buttonTitle: "Play Santa 2026",
-      splashImageUrl: "https://memory-santa-ts-uzz5.vercel.app/splash.png", 
-      splashBackgroundColor: "#d42426",
+      // Image updated to: nft/unnamed (2).jpg
+      iconUrl: "https://memory-santa-ts-uzz5.vercel.app/nft/unnamed%20(2).jpg", 
+      imageUrl: "https://memory-santa-ts-uzz5.vercel.app/nft/unnamed%20(2).jpg",
+      heroImageUrl: "https://memory-santa-ts-uzz5.vercel.app/nft/unnamed%20(2).jpg",
+      ogImageUrl: "https://memory-santa-ts-uzz5.vercel.app/nft/unnamed%20(2).jpg",
+      
+      buttonTitle: "Start Memory 2026",
+      splashImageUrl: "https://memory-santa-ts-uzz5.vercel.app/nft/unnamed%20(2).jpg", 
+      splashBackgroundColor: "#000000",
       webhookUrl: "https://memory-santa-ts-uzz5.vercel.app/api/webhook",
-      subtitle: "New Year Memory Challenge",
-      description: "Challenge your memory with Santa in 2026! A fun Farcaster miniapp.",
+      subtitle: "The 2026 Challenge",
+      description: "Test your skills in the 2026 Memory Challenge on Farcaster.",
       screenshotUrls: [],
       primaryCategory: "social",
-      tags: ["miniapp", "game", "farcaster"],
-      heroImageUrl: "https://memory-santa-ts-uzz5.vercel.app/santa-og.png",
-      tagline: "Play 2026 Edition",
-      ogTitle: "Santa Memory Game 2026",
-      ogDescription: "Challenge your memory in real time with the 2026 edition.",
-      ogImageUrl: "https://memory-santa-ts-uzz5.vercel.app/santa-og.png",
+      tags: ["miniapp", "game", "farcaster", "2026", "memory"],
+      tagline: "Memory 2026 Edition",
+      ogTitle: "Memory 2026",
+      ogDescription: "Official 2026 Memory Miniapp",
       noindex: false
     }
   };

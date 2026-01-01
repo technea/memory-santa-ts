@@ -24,3 +24,45 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure text is dark on light backgrounds */
+.bg-white {
+  color: #171717;
+}
+
+.bg-slate-50 {
+  color: #171717;
+}
+
+.bg-slate-100 {
+  color: #171717;
+}
+
+.bg-blue-50 {
+  color: #171717;
+}
+
+.bg-blue-100 {
+  color: #171717;
+}
+
+/* Ensure text is light on dark backgrounds */
+.bg-slate-900 {
+  color: #ededed;
+}
+
+.bg-slate-800 {
+  color: #ededed;
+}
+
+.bg-slate-700 {
+  color: #ededed;
+}
+
+.bg-blue-600 {
+  color: #ededed;
+}
+
+.bg-blue-700 {
+  color: #ededed;
+}
