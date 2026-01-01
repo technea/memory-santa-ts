@@ -613,7 +613,14 @@ export default function BaseMemoryGame() {
   const connectWallet = async () => {
     try {
       if (!isConnected) {
-        connect({ connector: injected() });
+        // Try injected first (MetaMask)
+        try {
+          await connect({ connector: injected({}) });
+        } catch (injectedError) {
+          console.log('Injected wallet not available, trying WalletConnect...');
+          // Fallback to WalletConnect
+          await connect({ connector: walletConnect() });
+        }
       }
     } catch (e) { 
       console.error('Failed to connect wallet:', e);
@@ -749,651 +756,643 @@ export default function BaseMemoryGame() {
   const currentTier = getPremiumDetails(currentLevel);
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'} font-sans selection:bg-blue-500/30 overflow-x-hidden`}>
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
-        body { 
-          font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          font-feature-settings: "ss01", "ss02", "cv01", "cv02";
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-        .backface-hidden { 
-          backface-visibility: hidden; 
-          -webkit-backface-visibility: hidden;
-        }
-        * {
-          box-sizing: border-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 82, 255, 0.3); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 82, 255, 0.5); }
-      `}</style>
+    <div
+      className={`w-full min-h-screen transition-all duration-300 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'} font-sans selection:bg-blue-500/30 overflow-x-hidden`}
+      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}
+    >
+      <div className="w-full min-h-screen overflow-y-auto custom-scrollbar">
+        <style jsx global>{`
+          @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
+          body { 
+            font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+          }
+          .backface-hidden { 
+            backface-visibility: hidden; 
+            -webkit-backface-visibility: hidden;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 82, 255, 0.18); border-radius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 82, 255, 0.3); }
+        `}</style>
 
-      <EnhancedBackground isDarkMode={isDarkMode} />
+        <EnhancedBackground isDarkMode={isDarkMode} />
 
-      {/* Header */}
-      <nav className={`sticky top-0 z-40 ${isDarkMode ? 'bg-slate-950/90' : 'bg-white/90'} backdrop-blur-xl border-b ${isDarkMode ? 'border-white/10' : 'border-slate-200'} px-4 py-3.5`}>
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BaseLogo size={36} animated />
-            <div>
-              <h1 className={`font-black text-base tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Base Memory Academy</h1>
-              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Match. Learn. Earn NFTs</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            
-            {isConnected ? (
-              <div className="flex items-center gap-2">
-                <div className={`text-xs px-3 py-1.5 rounded-lg ${chainId === base.id ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                  {chainId === base.id ? '✅ Base' : '🌐 Chain: ' + chainId}
-                </div>
-                <button 
-                  onClick={disconnectWallet}
-                  className={`text-xs font-semibold px-4 py-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-500 hover:bg-red-600 text-white'}`}
-                >
-                  {`${address?.slice(0,6)}...${address?.slice(-4)}`}
-                </button>
+        {/* Header */}
+        <nav className={`sticky top-0 z-40 ${isDarkMode ? 'bg-slate-950/90' : 'bg-white/90'} backdrop-blur-xl border-b ${isDarkMode ? 'border-white/10' : 'border-slate-200'} px-4 py-3.5`}>
+          <div className="max-w-md mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BaseLogo size={36} animated />
+              <div>
+                <h1 className={`font-black text-base tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Base Memory Academy</h1>
+                <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Match. Learn. Earn NFTs</p>
               </div>
-            ) : (
+            </div>
+            
+            <div className="flex items-center gap-3">
               <button 
-                onClick={connectWallet}
-                className={`text-xs font-semibold px-4 py-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
-              >
-                Connect Wallet
+                onClick={toggleTheme}
+                className={`p-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}>
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
               </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-md mx-auto p-5 pb-36">
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          <button
-            onClick={() => setActiveTab('game')}
-            className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${activeTab === 'game' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')}`}
-          >
-            🎮 Game
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('collection');
-              setShowUserNFTCollection(true);
-            }}
-            className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${activeTab === 'collection' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')}`}
-          >
-            🏆 NFT Collection
-          </button>
-          <button
-            onClick={() => setShowAIMemeGenerator(true)}
-            className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${isDarkMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-500 hover:bg-purple-600 text-white'}`}
-          >
-            🎨 AI Meme Generator
-          </button>
-          <button
-            onClick={() => setShowChainBGame(true)}
-            className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${isDarkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
-          >
-            🎮 Chain B Game
-          </button>
-        </div>
-
-        {/* 3D NFT Preview from User's File */}
-        <div className="mb-8">
-          <DripmasNFT3D 
-            level={currentLevel} 
-            currentLevel={Math.max(...completedLevels, 1)}
-          />
-          
-          <div className="mt-5 text-center">
-            <span className={`text-sm font-bold px-5 py-2.5 rounded-full ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
-              Target Reward: {currentTier.name}
-            </span>
-            <p className={`text-xs mt-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-              {currentTier.points} points
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Dashboard */}
-        <section className="grid grid-cols-4 gap-3 mb-8">
-          {[
-            { label: 'Moves', val: moves, icon: <Target size={14}/> },
-            { label: 'Level', val: `${currentLevel}/10`, icon: <Layers size={14}/> },
-            { label: 'Time', val: formatTime(timer), icon: <Clock size={14}/> },
-            { label: 'Hints', val: availableHints, icon: <Brain size={14}/> },
-          ].map((s, i) => (
-            <div key={i} className={`${isDarkMode ? 'bg-slate-900/40' : 'bg-white'} border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} p-4 rounded-xl text-center shadow-sm`}>
-              <div className={`flex items-center justify-center gap-1.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} mb-2`}>
-                {s.icon} <span className="text-xs font-semibold">{s.label}</span>
-              </div>
-              <div className="text-base font-bold text-blue-500">{s.val}</div>
-            </div>
-          ))}
-        </section>
-
-        {/* Hint System */}
-        <HintSystem
-          gameBoard={gameBoard}
-          matchedPairs={matchedPairs}
-          flippedCards={flippedCards}
-          onUseHint={useHint}
-          availableHints={availableHints}
-          isDarkMode={isDarkMode}
-        />
-
-        {/* Level Progress */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-              Progress: {completedLevels.length}/10 levels
-            </span>
-            <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-              Points: <span className="text-blue-500 font-bold">{userPoints}</span>
-            </span>
-          </div>
-          <div className={`w-full ${isDarkMode ? 'bg-slate-800/50' : 'bg-slate-200'} h-2.5 rounded-full overflow-hidden`}>
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500"
-              style={{ width: `${(completedLevels.length / 10) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Level Info Card */}
-        <div className={`bg-gradient-to-br ${isDarkMode ? 'from-blue-600/20 to-transparent border-blue-500/20' : 'from-blue-100 to-white border-blue-200'} border rounded-2xl p-5 mb-8 flex items-center justify-between`}>
-          <div>
-            <h2 className={`text-lg font-extrabold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-1`}>
-              Level {currentLevel} 
-              <span className="text-blue-500 text-xs">●</span>
-              <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} font-normal`}>
-                {LEVEL_LEARNING[currentLevel]?.title}
-              </span>
-            </h2>
-            <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-medium`}>
-              {isLevelCompleted ? '✅ Level Completed!' : `Match ${config.pairs} pairs of cards`}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={previousLevel}
-              disabled={currentLevel === 1}
-              className={`p-2 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-slate-100 hover:bg-slate-200'} rounded-full transition-colors disabled:opacity-30`}
-            >
-              <ChevronLeft size={20} className={isDarkMode ? "text-slate-300" : "text-slate-600"} />
-            </button>
-            
-            <button 
-              onClick={nextLevel}
-              disabled={currentLevel === 10 || !isLevelUnlocked(currentLevel + 1)}
-              className={`p-2 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-slate-100 hover:bg-slate-200'} rounded-full transition-colors disabled:opacity-30`}
-            >
-              {!isLevelUnlocked(currentLevel + 1) ? 
-                <Lock size={20} className={isDarkMode ? "text-slate-300" : "text-slate-600"} /> : 
-                <ChevronRight size={20} className={isDarkMode ? "text-slate-300" : "text-slate-600"} />
-              }
-            </button>
-          </div>
-        </div>
-
-        {/* Stars Display */}
-        <div className="flex justify-center gap-3 mb-8">
-          {[1, 2, 3].map((star) => (
-            <div
-              key={star}
-              className={`text-2xl ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}
-            >
-              ★
-            </div>
-          ))}
-        </div>
-
-        {/* Game Grid */}
-        {isLevelCompleted ? (
-          <div className={`mb-8 p-7 bg-gradient-to-br ${isDarkMode ? 'from-green-500/10 to-emerald-500/10 border-green-500/20' : 'from-green-100 to-emerald-50 border-green-200'} border rounded-2xl text-center`}>
-            <div className="text-5xl mb-4">🎉</div>
-            <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-3`}>Level {currentLevel} Complete!</h3>
-            <p className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'} mb-5`}>
-              You matched all {config.pairs} pairs in {moves} moves!
-            </p>
-            
-            {currentLevel === 1 && !nftMintingStatus[1] && (
-              <div className="mb-5">
-                <p className="text-sm text-yellow-500 mb-3">
-                  🎯 You've earned your first NFT! Connect wallet to mint.
-                </p>
-                <button
-                  onClick={() => mintNFT(1)}
-                  className="px-7 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full font-bold hover:scale-105 transition-transform text-sm text-white"
-                >
-                  🪙 Mint NFT Now
+              
+              {isConnected ? (
+                <div className="flex items-center gap-2">
+                  <div className={`text-xs px-3 py-1.5 rounded-lg ${chainId === base.id ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                    {chainId === base.id ? '✅ Base' : '🌐 Chain: ' + chainId}
+                  </div>
+                  <button 
+                    onClick={disconnectWallet}
+                    className={`text-xs font-semibold px-4 py-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-500 hover:bg-red-600 text-white'}`}>
+                    {`${address?.slice(0,6)}...${address?.slice(-4)}`}
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={connectWallet}
+                  className={`text-xs font-semibold px-4 py-2.5 rounded-xl transition-all ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}>
+                  Connect Wallet
                 </button>
-              </div>
-            )}
-            
-            {currentLevel < 10 && !completedLevels.includes(currentLevel + 1) && (
-              <p className="text-sm text-yellow-500 mb-5">
-                🎯 Level {currentLevel + 1} has been unlocked!
-              </p>
-            )}
+              )}
+            </div>
+          </div>
+        </nav>
+
+        <main className="max-w-md mx-auto p-5" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
+          {/* Navigation Tabs */}
+          <div className="flex flex-wrap gap-2 mb-8">
             <button
-              onClick={() => setShowCelebration(true)}
-              className="px-7 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full font-bold hover:scale-105 transition-transform text-sm text-white"
-            >
-              Claim Reward
+              onClick={() => setActiveTab('game')}
+              className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${activeTab === 'game' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')}`}>
+              🎮 Game
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('collection');
+                setShowUserNFTCollection(true);
+              }}
+              className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${activeTab === 'collection' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')}`}>
+              🏆 NFT Collection
+            </button>
+            <button
+              onClick={() => setShowAIMemeGenerator(true)}
+              className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${isDarkMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-500 hover:bg-purple-600 text-white'}`}>
+              🎨 AI Meme Generator
+            </button>
+            <button
+              onClick={() => setShowChainBGame(true)}
+              className={`text-sm font-semibold px-4 py-3 rounded-xl transition-all ${isDarkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
+              🎮 Chain B Game
             </button>
           </div>
-        ) : (
-          <div 
-            className="grid gap-4 mb-8"
-            style={{ gridTemplateColumns: `repeat(${config.cols}, 1fr)` }}
-          >
-            {gameBoard.map((card) => (
-              <PremiumCard
-                key={card.id}
-                isFlipped={flippedCards.has(card.id)}
-                isMatched={matchedPairs.has(card.id)}
-                onClick={() => handleCardClick(card.id)}
-                value={card.value}
-                isDarkMode={isDarkMode}
+
+          {/* 3D NFT Preview from User's File */}
+          <div className="mb-8">
+            <DripmasNFT3D 
+              level={currentLevel} 
+              currentLevel={Math.max(...completedLevels, 1)}
+            />
+            
+            <div className="mt-5 text-center">
+              <span className={`text-sm font-bold px-5 py-2.5 rounded-full ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                Target Reward: {currentTier.name}
+              </span>
+              <p className={`text-xs mt-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {currentTier.points} points
+              </p>
+            </div>
+          </div>
+
+          {/* Stats Dashboard */}
+          <section className="grid grid-cols-4 gap-3 mb-8">
+            {[
+              { label: 'Moves', val: moves, icon: <Target size={14}/> },
+              { label: 'Level', val: `${currentLevel}/10`, icon: <Layers size={14}/> },
+              { label: 'Time', val: formatTime(timer), icon: <Clock size={14}/> },
+              { label: 'Hints', val: availableHints, icon: <Brain size={14}/> },
+            ].map((s, i) => (
+              <div key={i} className={`${isDarkMode ? 'bg-slate-900/40' : 'bg-white'} border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} p-4 rounded-xl text-center shadow-sm`}>
+                <div className={`flex items-center justify-center gap-1.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} mb-2`}>
+                  {s.icon} <span className="text-xs font-semibold">{s.label}</span>
+                </div>
+                <div className="text-base font-bold text-blue-500">{s.val}</div>
+              </div>
+            ))}
+          </section>
+
+          {/* Hint System */}
+          <HintSystem
+            gameBoard={gameBoard}
+            matchedPairs={matchedPairs}
+            flippedCards={flippedCards}
+            onUseHint={useHint}
+            availableHints={availableHints}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Level Progress */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-3">
+              <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Progress: {completedLevels.length}/10 levels
+              </span>
+              <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Points: <span className="text-blue-500 font-bold">{userPoints}</span>
+              </span>
+            </div>
+            <div className={`w-full ${isDarkMode ? 'bg-slate-800/50' : 'bg-slate-200'} h-2.5 rounded-full overflow-hidden`}>
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500"
+                style={{ width: `${(completedLevels.length / 10) * 100}%` }}
               />
+            </div>
+          </div>
+
+          {/* Level Info Card */}
+          <div className={`bg-gradient-to-br ${isDarkMode ? 'from-blue-600/20 to-transparent border-blue-500/20' : 'from-blue-100 to-white border-blue-200'} border rounded-2xl p-5 mb-8 flex items-center justify-between`}>
+            <div>
+              <h2 className={`text-lg font-extrabold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-1`}>
+                Level {currentLevel} 
+                <span className="text-blue-500 text-xs">●</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} font-normal`}>
+                  {LEVEL_LEARNING[currentLevel]?.title}
+                </span>
+              </h2>
+              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-medium`}>
+                {isLevelCompleted ? '✅ Level Completed!' : `Match ${config.pairs} pairs of cards`}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={previousLevel}
+                disabled={currentLevel === 1}
+                className={`p-2 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-slate-100 hover:bg-slate-200'} rounded-full transition-colors disabled:opacity-30`}>
+                <ChevronLeft size={20} className={isDarkMode ? "text-slate-300" : "text-slate-600"} />
+              </button>
+              
+              <button 
+                onClick={nextLevel}
+                disabled={currentLevel === 10 || !isLevelUnlocked(currentLevel + 1)}
+                className={`p-2 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-slate-100 hover:bg-slate-200'} rounded-full transition-colors disabled:opacity-30`}>
+                {!isLevelUnlocked(currentLevel + 1) ? 
+                  <Lock size={20} className={isDarkMode ? "text-slate-300" : "text-slate-600"} /> : 
+                  <ChevronRight size={20} className={isDarkMode ? "text-slate-300" : "text-slate-600"} />
+                }
+              </button>
+            </div>
+          </div>
+
+          {/* Stars Display */}
+          <div className="flex justify-center gap-3 mb-8">
+            {[1, 2, 3].map((star) => (
+              <div
+                key={star}
+                className={`text-2xl ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}
+              >
+                ★
+              </div>
             ))}
           </div>
-        )}
 
-        {/* Game Controls */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <button 
-            onClick={earnHint}
-            disabled={isLevelCompleted}
-            className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-4 rounded-2xl transition-all disabled:opacity-40`}
-          >
-            <Brain size={20} className={isDarkMode ? "text-purple-400" : "text-purple-500"} />
-            <span className="text-xs font-semibold">Earn Hint</span>
-          </button>
-          
-          <button 
-            onClick={resetLevel}
-            className="flex flex-col items-center justify-center gap-1.5 bg-blue-500 hover:bg-blue-600 py-4 rounded-2xl shadow-lg shadow-blue-500/20 transition-all"
-          >
-            <RefreshCw size={20} className="text-white" />
-            <span className="text-xs font-semibold text-white">Reset</span>
-          </button>
-          
-          <button 
-            onClick={() => setShowLearning(true)}
-            className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-4 rounded-2xl transition-all`}
-          >
-            <BookOpen size={20} className={isDarkMode ? "text-cyan-400" : "text-cyan-500"} />
-            <span className="text-xs font-semibold">Learn</span>
-          </button>
-        </div>
-      </main>
-
-      {/* Fixed Bottom Controls */}
-      <div className={`fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950/95' : 'from-white via-white/95'} to-transparent z-40 border-t ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
-        <div className="max-w-md mx-auto grid grid-cols-4 gap-4">
-          <button 
-            onClick={() => mintNFT(currentLevel)}
-            disabled={!isLevelCompleted || nftMintingStatus[currentLevel]}
-            className={`flex flex-col items-center justify-center gap-1.5 ${(!isLevelCompleted || nftMintingStatus[currentLevel]) ? 'opacity-50 cursor-not-allowed' : ''} ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}
-          >
-            <Gift size={20} className={isDarkMode ? "text-green-400" : "text-green-500"} />
-            <span className="text-xs font-semibold">
-              {nftMintingStatus[currentLevel] ? 'Minted ✓' : 'Mint NFT'}
-            </span>
-          </button>
-          
-          <button 
-            onClick={() => {
-              setActiveTab('collection');
-              setShowUserNFTCollection(true);
-            }}
-            className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}
-          >
-            <Trophy size={20} className={isDarkMode ? "text-yellow-400" : "text-yellow-500"} />
-            <span className="text-xs font-semibold">NFTs</span>
-          </button>
-          
-          <button 
-            onClick={() => setShowUserMissionProgress(true)}
-            className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}
-          >
-            <Target size={20} className={isDarkMode ? "text-orange-400" : "text-orange-500"} />
-            <span className="text-xs font-semibold">Missions</span>
-          </button>
-          
-          <button 
-            onClick={() => setShowLevelSelect(true)}
-            className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}
-          >
-            <Layers size={20} className={isDarkMode ? "text-blue-400" : "text-blue-500"} />
-            <span className="text-xs font-semibold">Levels</span>
-          </button>
-        </div>
-      </div>
-
-      {/* NFT Collection Modal from User's File */}
-      <NFTCollectionModal
-        isOpen={showUserNFTCollection}
-        onClose={() => setShowUserNFTCollection(false)}
-        currentLevel={Math.max(...completedLevels, 1)}
-      />
-
-      {/* AI Meme Generator Modal */}
-      <AnimatePresence>
-        {showAIMemeGenerator && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
-            onClick={() => setShowAIMemeGenerator(false)}
-          >
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <AIMemeGenerator level={currentLevel} />
-              <button
-                onClick={() => setShowAIMemeGenerator(false)}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
-              >
-                🚀 CLOSE GENERATOR
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Chain B Game Modal */}
-      <AnimatePresence>
-        {showChainBGame && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
-            onClick={() => setShowChainBGame(false)}
-          >
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <ChainBGame />
-              <button
-                onClick={() => setShowChainBGame(false)}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
-              >
-                🎮 CLOSE GAME
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Mission Progress Modal */}
-      <AnimatePresence>
-        {showUserMissionProgress && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
-            onClick={() => setShowUserMissionProgress(false)}
-          >
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <MissionProgress level={currentLevel} />
-              <button
-                onClick={() => setShowUserMissionProgress(false)}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
-              >
-                🎯 CLOSE MISSIONS
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* NFT Minting Modal */}
-      <AnimatePresence>
-        {showMintModal && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
-            >
-              <button onClick={() => setShowMintModal(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Mint Modal">
-                <X size={22} />
-              </button>
+          {/* Game Grid */}
+          {isLevelCompleted ? (
+            <div className={`mb-8 p-7 bg-gradient-to-br ${isDarkMode ? 'from-green-500/10 to-emerald-500/10 border-green-500/20' : 'from-green-100 to-emerald-50 border-green-200'} border rounded-2xl text-center`}>
+              <div className="text-5xl mb-4">🎉</div>
+              <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-3`}>Level {currentLevel} Complete!</h3>
+              <p className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'} mb-5`}>
+                You matched all {config.pairs} pairs in {moves} moves!
+              </p>
               
-              <div className="text-center mb-6">
-                <div className="text-5xl mb-4">{mintingLevel ? getPremiumDetails(mintingLevel).emoji : '🪙'}</div>
-                <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>
-                  {isMintConfirmed ? 'NFT Minted Successfully!' : 
-                   isConfirming ? 'Confirming Transaction...' : 
-                   isMintPending ? 'Minting in Progress...' : 
-                   'Mint Your NFT'}
-                </h3>
-                <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {isMintConfirmed ? `Your ${mintingLevel ? getPremiumDetails(mintingLevel).name : 'NFT'} is now in your wallet!` :
-                   isConfirming ? 'Waiting for blockchain confirmation...' :
-                   isMintPending ? 'Please confirm the transaction in your wallet' :
-                   `Mint ${mintingLevel ? getPremiumDetails(mintingLevel).name : 'NFT'} to your wallet`}
+              {currentLevel === 1 && !nftMintingStatus[1] && (
+                <div className="mb-5">
+                  <p className="text-sm text-yellow-500 mb-3">
+                    🎯 You've earned your first NFT! Connect wallet to mint.
+                  </p>
+                  <button
+                    onClick={() => mintNFT(1)}
+                    className="px-7 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full font-bold hover:scale-105 transition-transform text-sm text-white"
+                  >
+                    🪙 Mint NFT Now
+                  </button>
+                </div>
+              )}
+              
+              {currentLevel < 10 && !completedLevels.includes(currentLevel + 1) && (
+                <p className="text-sm text-yellow-500 mb-5">
+                  🎯 Level {currentLevel + 1} has been unlocked!
                 </p>
-              </div>
-              
-              {mintError && (
-                <div className={`p-4 rounded-xl mb-6 ${isDarkMode ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-100'} border`}>
-                  <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
-                    Error: {mintError.message}
-                  </p>
-                </div>
               )}
-              
-              {mintTransactionHash && (
-                <div className={`p-4 rounded-xl mb-6 ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'} border`}>
-                  <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} mb-2`}>
-                    Transaction: {mintTransactionHash.slice(0, 10)}...{mintTransactionHash.slice(-8)}
-                  </p>
-                  <a 
-                    href={`https://basescan.org/tx/${mintTransactionHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`text-xs ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} underline`}
-                  >
-                    View on Basescan ↗
-                  </a>
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                {!isMintConfirmed && !isMintPending && !isConfirming && (
-                  <button
-                    onClick={() => mintingLevel && mintNFT(mintingLevel)}
-                    disabled={isMintPending}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isMintPending ? 'Minting...' : 'Mint NFT'}
-                  </button>
-                )}
-                
-                {isMintConfirmed && (
-                  <button
-                    onClick={() => setShowMintModal(false)}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform"
-                  >
-                    ✅ Done
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Learning Modal */}
-      <AnimatePresence>
-        {showLearning && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
-            >
-              <button onClick={() => setShowLearning(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Learning Modal"><X size={22}/></button>
-              <div className={`w-14 h-14 ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'} rounded-2xl flex items-center justify-center mb-5`}>
-                {LEVEL_LEARNING[currentLevel]?.icon}
-              </div>
-              <h3 className={`text-xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{LEVEL_LEARNING[currentLevel]?.title}</h3>
-              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-sm leading-relaxed mb-7`}>{LEVEL_LEARNING[currentLevel]?.content}</p>
-              <div className={`${isDarkMode ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'} border rounded-2xl p-5`}>
-                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest block mb-2">Onchain Tip</span>
-                <p className={`text-xs ${isDarkMode ? 'text-white/80' : 'text-slate-700'} italic`}>"{LEVEL_LEARNING[currentLevel]?.funFact}"</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quiz Modal */}
-      <AnimatePresence>
-        {showQuiz && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
-            >
-              <button onClick={() => setShowQuiz(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}>
-                <X size={22} />
+              <button
+                onClick={() => setShowCelebration(true)}
+                className="px-7 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full font-bold hover:scale-105 transition-transform text-sm text-white"
+              >
+                Claim Reward
               </button>
-              
-              <h3 className={`text-xl font-black mb-5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>🎓 Base Quiz</h3>
-              
-              {currentQuiz && (
-                <div className="space-y-5">
-                  <p className={`${isDarkMode ? 'text-slate-300' : 'text-slate-700'} text-sm`}>{currentQuiz.question}</p>
-                  
-                  <input
-                    type="text"
-                    value={quizAnswer}
-                    onChange={(e) => setQuizAnswer(e.target.value)}
-                    placeholder="Type your answer..."
-                    className={`w-full p-4 ${isDarkMode ? 'bg-slate-800 border-white/10' : 'bg-slate-100 border-slate-200'} border rounded-xl ${isDarkMode ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-500'} text-sm`}
-                    onKeyDown={(e) => e.key === 'Enter' && submitQuizAnswer()}
-                  />
-                  
-                  {quizFeedback && (
-                    <div className={`p-4 rounded-xl ${
-                      quizFeedback.includes('✅') 
-                        ? isDarkMode ? 'bg-green-500/10 text-green-300' : 'bg-green-50 text-green-700'
-                        : isDarkMode ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-700'
-                    }`}>
-                      {quizFeedback}
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-4">
-                    <button
-                      onClick={submitQuizAnswer}
-                      className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-xl font-bold hover:scale-105 transition-transform text-sm text-white"
-                    >
-                      Submit
-                    </button>
-                    <button
-                      onClick={() => setShowQuiz(false)}
-                      className={`px-5 py-4 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} rounded-xl font-bold transition-colors text-sm`}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          ) : (
+            <div 
+              className="grid gap-4 mb-8"
+              style={{ gridTemplateColumns: `repeat(${config.cols}, 1fr)` }}
+            >
+              {gameBoard.map((card) => (
+                <PremiumCard
+                  key={card.id}
+                  isFlipped={flippedCards.has(card.id)}
+                  isMatched={matchedPairs.has(card.id)}
+                  onClick={() => handleCardClick(card.id)}
+                  value={card.value}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
+            </div>
+          )}
 
-      {/* Win Celebration */}
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-blue-600/20 backdrop-blur-md"
-          >
-            <div className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-9 text-center ${isDarkMode ? 'text-white' : 'text-slate-900'} shadow-2xl`}>
-              <div className="text-7xl mb-5">{currentTier.emoji}</div>
-              <h2 className="text-3xl font-black mb-3 italic">{currentTier.name} Unlocked!</h2>
-              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-medium mb-7`}>You mastered Level {currentLevel} in {moves} moves.</p>
-              
-              <div className="flex justify-center gap-3 mb-7">
-                {[1, 2, 3].map((star) => (
-                  <div
-                    key={star}
-                    className={`text-3xl ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}
-                  >
-                    ★
-                  </div>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mb-9">
-                <div className={`p-5 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <span className={`block text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} uppercase`}>Points</span>
-                  <span className="text-xl font-black text-blue-500">+{config.points}</span>
-                </div>
-                <div className={`p-5 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <span className={`block text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} uppercase`}>Rarity</span>
-                  <span className={`text-xl font-black ${currentTier.rarity === 'GODLIKE' ? 'text-yellow-500' : 'text-green-500'}`}>
-                    {currentTier.rarity}
-                  </span>
-                </div>
-              </div>
+          {/* Game Controls */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <button 
+              onClick={earnHint}
+              disabled={isLevelCompleted}
+              className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-4 rounded-2xl transition-all disabled:opacity-40`}>
+              <Brain size={20} className={isDarkMode ? "text-purple-400" : "text-purple-500"} />
+              <span className="text-xs font-semibold">Earn Hint</span>
+            </button>
+            
+            <button 
+              onClick={resetLevel}
+              className="flex flex-col items-center justify-center gap-1.5 bg-blue-500 hover:bg-blue-600 py-4 rounded-2xl shadow-lg shadow-blue-500/20 transition-all"
+            >
+              <RefreshCw size={20} className="text-white" />
+              <span className="text-xs font-semibold text-white">Reset</span>
+            </button>
+            
+            <button 
+              onClick={() => setShowLearning(true)}
+              className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-4 rounded-2xl transition-all`}>
+              <BookOpen size={20} className={isDarkMode ? "text-cyan-400" : "text-cyan-500"} />
+              <span className="text-xs font-semibold">Learn</span>
+            </button>
+          </div>
+        </main>
 
-              <div className="space-y-4">
-                {currentLevel < 10 ? (
-                  <button 
-                    onClick={nextLevel}
-                    className="w-full bg-blue-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
-                  >
-                    Next Level <ChevronRight size={20}/>
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => setShowCelebration(false)}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform"
-                  >
-                    🎉 All 10 Levels Complete!
-                  </button>
-                )}
-                
-                <button 
-                  onClick={() => {
-                    setShowCelebration(false);
-                    setShowUserNFTCollection(true);
-                  }}
-                  className={`w-full ${isDarkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'} font-bold py-4 rounded-2xl transition-colors`}
+        {/* Fixed Bottom Controls */}
+        <div className={`fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950/95' : 'from-white via-white/95'} to-transparent z-40 border-t ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="max-w-md mx-auto grid grid-cols-4 gap-4">
+            <button 
+              onClick={() => mintNFT(currentLevel)}
+              disabled={!isLevelCompleted || nftMintingStatus[currentLevel]}
+              className={`flex flex-col items-center justify-center gap-1.5 ${(!isLevelCompleted || nftMintingStatus[currentLevel]) ? 'opacity-50 cursor-not-allowed' : ''} ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}>
+              <Gift size={20} className={isDarkMode ? "text-green-400" : "text-green-500"} />
+              <span className="text-xs font-semibold">
+                {nftMintingStatus[currentLevel] ? 'Minted ✓' : 'Mint NFT'}
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => {
+                setActiveTab('collection');
+                setShowUserNFTCollection(true);
+              }}
+              className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}>
+              <Trophy size={20} className={isDarkMode ? "text-yellow-400" : "text-yellow-500"} />
+              <span className="text-xs font-semibold">NFTs</span>
+            </button>
+            
+            <button 
+              onClick={() => setShowUserMissionProgress(true)}
+              className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}>
+              <Target size={20} className={isDarkMode ? "text-orange-400" : "text-orange-500"} />
+              <span className="text-xs font-semibold">Missions</span>
+            </button>
+            
+            <button 
+              onClick={() => setShowLevelSelect(true)}
+              className={`flex flex-col items-center justify-center gap-1.5 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} border ${isDarkMode ? 'border-white/10' : 'border-slate-300'} py-3.5 rounded-2xl transition-all`}>
+              <Layers size={20} className={isDarkMode ? "text-blue-400" : "text-blue-500"} />
+              <span className="text-xs font-semibold">Levels</span>
+            </button>
+          </div>
+        </div>
+
+        {/* NFT Collection Modal from User's File */}
+        <NFTCollectionModal
+          isOpen={showUserNFTCollection}
+          onClose={() => setShowUserNFTCollection(false)}
+          currentLevel={Math.max(...completedLevels, 1)}
+        />
+
+        {/* AI Meme Generator Modal */}
+        <AnimatePresence>
+          {showAIMemeGenerator && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
+              onClick={() => setShowAIMemeGenerator(false)}
+            >
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <AIMemeGenerator level={currentLevel} />
+                <button
+                  onClick={() => setShowAIMemeGenerator(false)}
+                  className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
                 >
-                  View in Collection
+                  🚀 CLOSE GENERATOR
                 </button>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Chain B Game Modal */}
+        <AnimatePresence>
+          {showChainBGame && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
+              onClick={() => setShowChainBGame(false)}
+            >
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <ChainBGame />
+                <button
+                  onClick={() => setShowChainBGame(false)}
+                  className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
+                >
+                  🎮 CLOSE GAME
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mission Progress Modal */}
+        <AnimatePresence>
+          {showUserMissionProgress && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
+              onClick={() => setShowUserMissionProgress(false)}
+            >
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <MissionProgress level={currentLevel} />
+                <button
+                  onClick={() => setShowUserMissionProgress(false)}
+                  className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
+                >
+                  🎯 CLOSE MISSIONS
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* NFT Minting Modal */}
+        <AnimatePresence>
+          {showMintModal && (
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div 
+                initial={{ y: 100 }} animate={{ y: 0 }}
+                className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
+              >
+                <button onClick={() => setShowMintModal(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Mint Modal">
+                  <X size={22} />
+                </button>
+                
+                <div className="text-center mb-6">
+                  <div className="text-5xl mb-4">{mintingLevel ? getPremiumDetails(mintingLevel).emoji : '🪙'}</div>
+                  <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>
+                    {isMintConfirmed ? 'NFT Minted Successfully!' : 
+                     isConfirming ? 'Confirming Transaction...' : 
+                     isMintPending ? 'Minting in Progress...' : 
+                     'Mint Your NFT'}
+                  </h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {isMintConfirmed ? `Your ${mintingLevel ? getPremiumDetails(mintingLevel).name : 'NFT'} is now in your wallet!` :
+                     isConfirming ? 'Waiting for blockchain confirmation...' :
+                     isMintPending ? 'Please confirm the transaction in your wallet' :
+                     `Mint ${mintingLevel ? getPremiumDetails(mintingLevel).name : 'NFT'} to your wallet`}
+                  </p>
+                </div>
+                
+                {mintError && (
+                  <div className={`p-4 rounded-xl mb-6 ${isDarkMode ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-100'} border`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
+                      Error: {mintError.message}
+                    </p>
+                  </div>
+                )}
+                
+                {mintTransactionHash && (
+                  <div className={`p-4 rounded-xl mb-6 ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'} border`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} mb-2`}>
+                      Transaction: {mintTransactionHash.slice(0, 10)}...{mintTransactionHash.slice(-8)}
+                    </p>
+                    <a 
+                      href={`https://basescan.org/tx/${mintTransactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-xs ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} underline`}
+                    >
+                      View on Basescan ↗
+                    </a>
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                  {!isMintConfirmed && !isMintPending && !isConfirming && (
+                    <button
+                      onClick={() => mintingLevel && mintNFT(mintingLevel)}
+                      disabled={isMintPending}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isMintPending ? 'Minting...' : 'Mint NFT'}
+                    </button>
+                  )}
+                  
+                  {isMintConfirmed && (
+                    <button
+                      onClick={() => setShowMintModal(false)}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform"
+                    >
+                      ✅ Done
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Learning Modal */}
+        <AnimatePresence>
+          {showLearning && (
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div 
+                initial={{ y: 100 }} animate={{ y: 0 }}
+                className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
+              >
+                <button onClick={() => setShowLearning(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Learning Modal"><X size={22}/></button>
+                <div className={`w-14 h-14 ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'} rounded-2xl flex items-center justify-center mb-5`}>
+                  {LEVEL_LEARNING[currentLevel]?.icon}
+                </div>
+                <h3 className={`text-xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{LEVEL_LEARNING[currentLevel]?.title}</h3>
+                <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-sm leading-relaxed mb-7`}>{LEVEL_LEARNING[currentLevel]?.content}</p>
+                <div className={`${isDarkMode ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'} border rounded-2xl p-5`}>
+                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest block mb-2">Onchain Tip</span>
+                  <p className={`text-xs ${isDarkMode ? 'text-white/80' : 'text-slate-700'} italic`}>&quot;{LEVEL_LEARNING[currentLevel]?.funFact}&quot;</p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Quiz Modal */}
+        <AnimatePresence>
+          {showQuiz && (
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div 
+                initial={{ y: 100 }} animate={{ y: 0 }}
+                className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
+              >
+                <button onClick={() => setShowQuiz(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}>
+                  <X size={22} />
+                </button>
+                
+                <h3 className={`text-xl font-black mb-5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  🎓 Base Quiz
+                </h3>
+
+                {currentQuiz && (
+                  <div className="space-y-5">
+                    <p className={`${isDarkMode ? 'text-slate-300' : 'text-slate-700'} text-sm`}>{currentQuiz.question}</p>
+                    
+                    <input
+                      type="text"
+                      value={quizAnswer}
+                      onChange={(e) => setQuizAnswer(e.target.value)}
+                      placeholder="Type your answer..."
+                      className={`w-full p-4 ${isDarkMode ? 'bg-slate-800 border-white/10' : 'bg-slate-100 border-slate-200'} border rounded-xl ${isDarkMode ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-500'} text-sm`}
+                      onKeyDown={(e) => e.key === 'Enter' && submitQuizAnswer()}
+                    />
+                    
+                    {quizFeedback && (
+                      <div className={`p-4 rounded-xl ${
+                        quizFeedback.includes('✅') 
+                          ? isDarkMode ? 'bg-green-500/10 text-green-300' : 'bg-green-50 text-green-700'
+                          : isDarkMode ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-700'
+                      }`}>
+                        {quizFeedback}
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-4">
+                      <button
+                        onClick={submitQuizAnswer}
+                        className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-xl font-bold hover:scale-105 transition-transform text-sm text-white"
+                      >
+                        Submit
+                      </button>
+                      <button
+                        onClick={() => setShowQuiz(false)}
+                        className={`px-5 py-4 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} rounded-xl font-bold transition-colors text-sm`}
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Win Celebration */}
+        <AnimatePresence>
+          {showCelebration && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-blue-600/20 backdrop-blur-md"
+            >
+              <div className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-9 text-center ${isDarkMode ? 'text-white' : 'text-slate-900'} shadow-2xl`}>
+                <div className="text-7xl mb-5">{currentTier.emoji}</div>
+                <h2 className="text-3xl font-black mb-3 italic">{currentTier.name} Unlocked!</h2>
+                <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-medium mb-7`}>You mastered Level {currentLevel} in {moves} moves.</p>
+                
+                <div className="flex justify-center gap-3 mb-7">
+                  {[1, 2, 3].map((star) => (
+                    <div
+                      key={star}
+                      className={`text-3xl ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}
+                    >
+                      ★
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-9">
+                  <div className={`p-5 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                    <span className={`block text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} uppercase`}>Points</span>
+                    <span className="text-xl font-black text-blue-500">+{config.points}</span>
+                  </div>
+                  <div className={`p-5 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                    <span className={`block text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} uppercase`}>Rarity</span>
+                    <span className={`text-xl font-black ${currentTier.rarity === 'GODLIKE' ? 'text-yellow-500' : 'text-green-500'}`}>
+                      {currentTier.rarity}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {currentLevel < 10 ? (
+                    <button 
+                      onClick={nextLevel}
+                      className="w-full bg-blue-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                    >
+                      Next Level <ChevronRight size={20}/>
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => setShowCelebration(false)}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform"
+                    >
+                      🎉 All 10 Levels Complete!
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={() => {
+                      setShowCelebration(false);
+                      setShowUserNFTCollection(true);
+                    }}
+                    className={`w-full ${isDarkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'} font-bold py-4 rounded-2xl transition-colors`}
+                  >
+                    View in Collection
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

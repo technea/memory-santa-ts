@@ -1,12 +1,13 @@
 import { createConfig, http } from 'wagmi'
-import { mainnet, sepolia } from 'wagmi/chains'
+import { mainnet, sepolia, base } from 'wagmi/chains'
 import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors'
 
 export const wagmiConfig = createConfig({
-  chains: [mainnet, sepolia],
+  chains: [mainnet, sepolia, base],
   transports: {
     [mainnet.id]: http(),
     [sepolia.id]: http(),
+    [base.id]: http(),
   },
   connectors: [
     injected(),
@@ -15,6 +16,7 @@ export const wagmiConfig = createConfig({
     }),
     coinbaseWallet({
       appName: 'Memory Santa',
+      headlessMode: true,
     }),
   ],
   ssr: true,
