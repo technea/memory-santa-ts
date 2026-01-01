@@ -1,10 +1,18 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useContext } from 'react';
+import { useWriteContract, usePrepareContractWrite, useAccount, useWaitForTransaction } from 'wagmi';
+import { parseEther } from 'viem';
 
 // ============================
-// 🎵 AUDIO HOOK
+// 📦 IMPORT YOUR PROVIDER CONTEXT
+// ============================
+// Make sure this path matches your actual provider file location
+import { useMiniApp, MiniAppContext } from './WagmiProviderWrapper';
+
+// ============================
+// 🎵 AUDIO HOOK (UPDATED WITH SAFE PLAY)
 // ============================
 export const useAudio = (src: string, volume: number = 0.3) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -25,18 +33,18 @@ export const useAudio = (src: string, volume: number = 0.3) => {
     }
   }, [src, volume]);
 
-  const play = () => {
+  const play = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.currentTime = 0; 
       audioRef.current.play().catch(e => console.warn("Audio blocked by browser:", e));
     }
-  };
+  }, []);
 
   return play; 
 };
 
 // ============================
-// 🎨 LOGO COMPONENTS
+// 🎨 LOGO COMPONENTS (UNCHANGED)
 // ============================
 interface LogoProps {
   size?: number;
@@ -82,7 +90,7 @@ export const ChainBLogo = ({ size = 40, className = "", animated = false, glowin
 );
 
 // ============================
-// 🎮 GAME COMPONENT
+// 🎮 GAME COMPONENT (UNCHANGED)
 // ============================
 interface Coin {
   id: number;
@@ -292,7 +300,7 @@ export const ChainBGame = () => {
 };
 
 // ============================
-// 📊 DATA UTILITIES
+// 📊 DATA UTILITIES (UNCHANGED)
 // ============================
 interface MemeData {
   level: number;
@@ -541,7 +549,7 @@ export const getPremiumDetails = (level: number): PremiumDetails => {
 };
 
 // ============================
-// 🎯 MISSION PROGRESS
+// 🎯 MISSION PROGRESS (UNCHANGED)
 // ============================
 interface MissionProgressProps {
   level?: number;
@@ -592,7 +600,7 @@ export const MissionProgress = ({ level = 1 }: MissionProgressProps) => {
 };
 
 // ============================
-// 🤖 AI MEME GENERATOR
+// 🤖 AI MEME GENERATOR (UNCHANGED)
 // ============================
 interface AIMemeGeneratorProps {
   level: number;
@@ -805,7 +813,7 @@ export const AIMemeGenerator = ({ level }: AIMemeGeneratorProps) => {
 };
 
 // ============================
-// ✨ SPECIAL EFFECTS COMPONENT
+// ✨ SPECIAL EFFECTS COMPONENT (UNCHANGED)
 // ============================
 interface NFTSpecialEffectsProps {
   effect: string;
@@ -846,7 +854,26 @@ const NFTSpecialEffects = ({ effect }: NFTSpecialEffectsProps) => {
 };
 
 // ============================
-// 🏆 NFT COLLECTION MODAL - MOBILE FIRST
+// 📜 NFT CONTRACT CONFIGURATION
+// ============================
+// Replace with your actual deployed contract address
+const NFT_CONTRACT_ADDRESS = '0xYourContractAddressHere';
+const NFT_CONTRACT_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "level", "type": "uint256" },
+      { "internalType": "string", "name": "tokenURI", "type": "string" }
+    ],
+    "name": "mintNFT",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+] as const;
+
+// ============================
+// 🏆 NFT COLLECTION MODAL - UPDATED FOR REAL FARCASTER INTEGRATION
 // ============================
 interface NFTCollectionModalProps {
   isOpen: boolean;
@@ -856,30 +883,132 @@ interface NFTCollectionModalProps {
 
 export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCollectionModalProps) => {
   const [selectedNFT, setSelectedNFT] = useState<number>(currentLevel);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const nfts = Array.from({ length: 10 }, (_, i) => i + 1);
-
+  const [mintedNFTs, setMintedNFTs] = useState<number[]>([]);
+  const [txHash, setTxHash] = useState<string>('');
+  
+  // Get real Farcaster context
+  const { isInMiniApp, context } = useMiniApp();
+  
+  // Get wallet info from wagmi
+  const { address, isConnected } = useAccount();
+  
+  // Real Farcaster user info
+  const farcasterUser = context?.user;
+  const userAddress = farcasterUser?.address || address;
+  const username = farcasterUser?.username || 'Farcaster User';
+  const userFid = farcasterUser?.fid || 'N/A';
+  
+  // Generate token URI for NFT metadata
+  const generateTokenURI = (level: number): string => {
+    const tier = getPremiumDetails(level);
+    return `https://your-metadata-api.com/nft/${level}`;
+  };
+  
+  // Prepare contract write configuration
+  const { config } = usePrepareContractWrite({
+    address: NFT_CONTRACT_ADDRESS,
+    abi: NFT_CONTRACT_ABI,
+    functionName: 'mintNFT',
+    args: [userAddress || '0x', selectedNFT, generateTokenURI(selectedNFT)],
+    value: parseEther('0.001'), // Mint price
+    enabled: !!userAddress && !mintedNFTs.includes(selectedNFT) && selectedNFT <= currentLevel,
+  });
+  
+  // Contract write hook
+  const { 
+    write: mintNFTReal, 
+    isLoading: isMinting, 
+    data: mintData 
+  } = useWriteContract(config);
+  
+  // Wait for transaction confirmation
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransaction({
+    hash: mintData?.hash,
+  });
+  
+  // Handle successful mint
+  useEffect(() => {
+    if (isConfirmed && mintData?.hash) {
+      setTxHash(mintData.hash);
+      setMintedNFTs(prev => [...prev, selectedNFT]);
+      
+      // Play success sound safely
+      try {
+        const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => console.log('Audio blocked'));
+      } catch (error) {
+        console.log('Audio error:', error);
+      }
+      
+      // Show success message
+      setTimeout(() => {
+        alert(`🎉 NFT Minted Successfully!\n\nLevel: ${selectedNFT}\nTransaction: ${mintData.hash}\n\nView on BaseScan: https://basescan.org/tx/${mintData.hash}`);
+      }, 500);
+    }
+  }, [isConfirmed, mintData?.hash, selectedNFT]);
+  
+  // Safe audio play function
+  const playHoverSound = useCallback(() => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3');
+      audio.volume = 0.2;
+      audio.load();
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Silent fail for autoplay restrictions
+        });
+      }
+    } catch (error) {
+      // Ignore audio errors
+    }
+  }, []);
+  
+  // Handle NFT selection
   const handleNFTSelect = (nftLevel: number) => {
-    setIsLoading(true);
     setSelectedNFT(nftLevel);
-    setTimeout(() => setIsLoading(false), 300);
+    playHoverSound();
   };
-
-  const playHoverSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3');
-    audio.volume = 0.2;
-    audio.play().catch(e => console.warn('Audio play failed:', e));
-  };
-
-  const handleClaimNFT = () => {
-    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3');
-    audio.volume = 0.3;
-    audio.play().catch(e => console.warn('Audio play failed:', e));
+  
+  // Real mint function
+  const handleMint = async () => {
+    if (!isInMiniApp) {
+      alert('Please open this app in Farcaster (Warpcast) to mint NFTs');
+      return;
+    }
     
-    alert(`🎉 Congratulations! You claimed Level ${selectedNFT} NFT!\n\nYou earned ${getPremiumDetails(selectedNFT).points} points!\n\nThis NFT has been added to your collection on Base chain!`);
+    if (!userAddress) {
+      alert('No wallet address found. Make sure you\'re logged into Farcaster.');
+      return;
+    }
+    
+    if (selectedNFT > currentLevel) {
+      alert(`You need to reach Level ${selectedNFT} to mint this NFT!`);
+      return;
+    }
+    
+    if (mintedNFTs.includes(selectedNFT)) {
+      alert(`You already minted Level ${selectedNFT} NFT!`);
+      return;
+    }
+    
+    // Play minting sound safely
+    try {
+      const mintSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3');
+      mintSound.volume = 0.3;
+      mintSound.load();
+      mintSound.play().catch(() => console.log('Mint sound blocked'));
+    } catch (error) {
+      console.log('Sound error:', error);
+    }
+    
+    // Execute the real mint transaction
+    mintNFTReal?.();
   };
-
+  
+  const nfts = Array.from({ length: 10 }, (_, i) => i + 1);
+  
   return (
     <AnimatePresence>
       {isOpen && (
@@ -905,7 +1034,7 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
                 </div>
                 <div>
                   <h2 className="text-xl md:text-2xl font-black text-white">🏆 NFT COLLECTION</h2>
-                  <p className="text-xs text-[#00D4FF]/80">Discover and collect exclusive NFTs</p>
+                  <p className="text-xs text-[#00D4FF]/80">Mint exclusive NFTs on Base Chain</p>
                 </div>
               </div>
               <button
@@ -917,70 +1046,191 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
               </button>
             </div>
 
-            {/* RESPONSIVE NFT GRID - Mobile First */}
-            <div className="mb-4">
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-4 p-2">
-                  {nfts.map(nft => {
-                    const nftTier = getPremiumDetails(nft);
-                    const isUnlocked = nft <= currentLevel;
+            {/* REAL Farcaster User Info Section */}
+            {isInMiniApp && farcasterUser ? (
+              <div className="mb-6 p-4 bg-gradient-to-r from-[#0052FF]/20 to-purple-500/10 rounded-xl border border-[#0052FF]/30">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">
+                        {username?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">@{username}</div>
+                      <div className="text-xs text-gray-300">
+                        FID: {userFid} • {userAddress?.substring(0, 6)}...{userAddress?.substring(userAddress.length - 4)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs bg-green-500/20 text-green-400 px-3 py-1 rounded-full">
+                    ✓ Connected via Farcaster
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/30">
+                <div className="text-center">
+                  <div className="text-yellow-400 text-lg mb-2">⚠️ Not in Farcaster</div>
+                  <p className="text-sm text-yellow-300">
+                    Open this app in Farcaster (Warpcast) to mint NFTs with your wallet
+                  </p>
+                </div>
+              </div>
+            )}
 
-                    return (
-                      <motion.div
-                        key={nft}
-                        onClick={() => handleNFTSelect(nft)}
-                        onMouseEnter={playHoverSound}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`relative p-3 rounded-xl border-2 cursor-pointer transition-all overflow-hidden h-[100px] sm:h-[120px] md:h-[140px] ${
-                          selectedNFT === nft
-                            ? 'border-[#00D4FF] bg-gradient-to-br from-[#0052FF]/40 to-[#00D4FF]/20 scale-105 shadow-2xl shadow-[#00D4FF]/30'
-                            : 'border-[#0052FF]/30 bg-gradient-to-br from-black/40 to-black/20 hover:border-[#00D4FF]/50'
-                        }`}
-                      >
-                        <div className="text-center h-full flex flex-col justify-center">
-                          <div className="text-2xl sm:text-3xl md:text-4xl mb-1 sm:mb-2">{nftTier.emoji}</div>
-                          <div className="text-xs sm:text-sm font-bold text-white mb-1 truncate">{nftTier.name}</div>
-                          <div className={`text-[10px] sm:text-xs font-bold px-1 py-0.5 rounded-full mb-1 sm:mb-2 ${
-                            nftTier.rarity === 'COMMON' ? 'bg-gray-600 text-gray-200' :
-                            nftTier.rarity === 'UNCOMMON' ? 'bg-green-600 text-green-200' :
-                            nftTier.rarity === 'RARE' ? 'bg-blue-600 text-blue-200' :
-                            nftTier.rarity === 'EPIC' ? 'bg-purple-600 text-purple-200' :
-                            nftTier.rarity === 'LEGENDARY' ? 'bg-orange-600 text-orange-200' :
-                            nftTier.rarity === 'MYTHIC' ? 'bg-pink-600 text-pink-200' :
-                            'bg-yellow-600 text-yellow-200'
-                          }`}>
-                            {nftTier.rarity}
-                          </div>
-                          <div className="text-[10px] sm:text-xs text-[#FFD166] font-bold">🔥 {nftTier.points} pts</div>
+            {/* Transaction Status */}
+            {(isMinting || isConfirming || txHash) && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 bg-gradient-to-r from-[#0052FF]/30 to-[#00D4FF]/20 rounded-xl border border-[#00D4FF]/30"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    isMinting ? 'bg-yellow-400 animate-pulse' :
+                    isConfirming ? 'bg-blue-400 animate-pulse' :
+                    'bg-green-400'
+                  }`}></div>
+                  <div className="text-sm font-bold text-white">
+                    {isMinting ? '🔄 Confirm in Wallet...' :
+                     isConfirming ? '⏳ Confirming Transaction...' :
+                     '✅ Transaction Confirmed!'}
+                  </div>
+                </div>
+                {txHash && (
+                  <a 
+                    href={`https://basescan.org/tx/${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-[#00D4FF] hover:underline block truncate"
+                  >
+                    View on BaseScan: {txHash.substring(0, 10)}...{txHash.substring(txHash.length - 8)}
+                  </a>
+                )}
+              </motion.div>
+            )}
+
+            {/* NFT Grid */}
+            <div className="mb-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4 p-2">
+                {nfts.map(nft => {
+                  const nftTier = getPremiumDetails(nft);
+                  const isUnlocked = nft <= currentLevel;
+                  const isMinted = mintedNFTs.includes(nft);
+
+                  return (
+                    <motion.div
+                      key={nft}
+                      onClick={() => handleNFTSelect(nft)}
+                      onMouseEnter={playHoverSound}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`relative p-3 rounded-xl border-2 cursor-pointer transition-all overflow-hidden h-[100px] sm:h-[120px] ${
+                        selectedNFT === nft
+                          ? 'border-[#00D4FF] bg-gradient-to-br from-[#0052FF]/40 to-[#00D4FF]/20 scale-105 shadow-2xl shadow-[#00D4FF]/30'
+                          : 'border-[#0052FF]/30 bg-gradient-to-br from-black/40 to-black/20 hover:border-[#00D4FF]/50'
+                      }`}
+                    >
+                      <div className="text-center h-full flex flex-col justify-center">
+                        <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{nftTier.emoji}</div>
+                        <div className="text-xs font-bold text-white mb-1 truncate">{nftTier.name}</div>
+                        <div className={`text-[10px] font-bold px-1 py-0.5 rounded-full mb-1 ${
+                          nftTier.rarity === 'COMMON' ? 'bg-gray-600 text-gray-200' :
+                          nftTier.rarity === 'UNCOMMON' ? 'bg-green-600 text-green-200' :
+                          nftTier.rarity === 'RARE' ? 'bg-blue-600 text-blue-200' :
+                          nftTier.rarity === 'EPIC' ? 'bg-purple-600 text-purple-200' :
+                          nftTier.rarity === 'LEGENDARY' ? 'bg-orange-600 text-orange-200' :
+                          nftTier.rarity === 'MYTHIC' ? 'bg-pink-600 text-pink-200' :
+                          'bg-yellow-600 text-yellow-200'
+                        }`}>
+                          {nftTier.rarity}
                         </div>
+                        <div className="text-[10px] text-[#FFD166] font-bold">🔥 {nftTier.points} pts</div>
+                      </div>
 
-                        {!isUnlocked && (
-                          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-xl mb-1">🔒</div>
-                              <span className="text-xs font-bold text-white">Level {nft}</span>
-                            </div>
+                      {isMinted && (
+                        <div className="absolute top-1 right-1 bg-gradient-to-r from-[#00D4FF] to-[#0052FF] rounded-full w-5 h-5 flex items-center justify-center">
+                          <span className="text-xs">✓</span>
+                        </div>
+                      )}
+
+                      {!isUnlocked && (
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-xl mb-1">🔒</div>
+                            <span className="text-xs font-bold text-white">Level {nft}</span>
                           </div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="text-center">
-              <button
-                onClick={handleClaimNFT}
-                disabled={selectedNFT > currentLevel}
-                className={`px-4 md:px-6 py-3 rounded-xl font-bold text-sm md:text-base ${
-                  selectedNFT > currentLevel
-                    ? 'bg-gray-700 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-[#0052FF] to-[#00D4FF] hover:scale-105'
-                } transition-transform shadow-lg`}
-                onMouseEnter={playHoverSound}
-              >
-                {selectedNFT <= currentLevel ? '🎁 CLAIM NFT' : '🔒 LOCKED'}
-              </button>
+            {/* Selected NFT Details and REAL Mint Button */}
+            <div className="bg-gradient-to-r from-[#001F3F] to-[#0052FF]/20 p-4 rounded-xl border border-[#0052FF]/30 mb-4">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <div className="text-lg font-black text-white mb-1">
+                    {getPremiumDetails(selectedNFT).name} #{selectedNFT.toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-sm text-white/70">
+                    Rarity: <span style={{ color: getPremiumDetails(selectedNFT).accent }}>
+                      {getPremiumDetails(selectedNFT).rarity}
+                    </span>
+                    <span className="mx-2">•</span>
+                    Mint Cost: <span className="text-[#FFD166] font-bold">0.001 ETH</span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={handleMint}
+                    disabled={isMinting || isConfirming || selectedNFT > currentLevel || mintedNFTs.includes(selectedNFT) || !isInMiniApp}
+                    className={`px-4 md:px-6 py-3 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-2 ${
+                      selectedNFT > currentLevel || mintedNFTs.includes(selectedNFT) || isMinting || isConfirming || !isInMiniApp
+                        ? 'bg-gray-700 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-[#0052FF] to-[#00D4FF] hover:scale-105'
+                    } transition-transform shadow-lg min-w-[140px]`}
+                  >
+                    {isMinting || isConfirming ? (
+                      <>
+                        <span className="animate-spin">⟳</span>
+                        {isMinting ? 'CONFIRM...' : 'CONFIRMING...'}
+                      </>
+                    ) : mintedNFTs.includes(selectedNFT) ? (
+                      '✅ MINTED'
+                    ) : selectedNFT > currentLevel ? (
+                      '🔒 LOCKED'
+                    ) : !isInMiniApp ? (
+                      'OPEN IN FARCASTER'
+                    ) : (
+                      '🎁 MINT NFT'
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      const meme = getLevelMemes(selectedNFT);
+                      alert(`📱 Share this NFT!\n\n${meme.caption}\n\nLevel: ${selectedNFT}\nRarity: ${getPremiumDetails(selectedNFT).rarity}\nPoints: ${getPremiumDetails(selectedNFT).points}\n\nShare on Base chain!`);
+                    }}
+                    className="px-4 py-3 bg-gradient-to-r from-[#0052FF] to-[#8A2BE2] text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform shadow-lg text-sm"
+                  >
+                    📤 SHARE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Gas Fee Estimation */}
+            <div className="text-center text-xs text-white/50">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <BaseLogo size={12} />
+                <span>Powered by Base Network • Real blockchain transactions</span>
+              </div>
+              <div>Minted NFTs are ERC-721 tokens stored on Base blockchain</div>
             </div>
           </motion.div>
         </motion.div>
@@ -990,7 +1240,7 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
 };
 
 // ============================
-// 🎨 3D CUBE COMPONENT - COMPLETE
+// 🎨 3D CUBE COMPONENT - COMPLETE (UNCHANGED)
 // ============================
 interface NFT3DCubeProps {
   tier: PremiumDetails;
@@ -1102,7 +1352,7 @@ const NFT3DCube = ({ tier, level, memes, isHovered, rotation, onMouseMove, onMou
 };
 
 // ============================
-// 🎯 ACTION BUTTONS
+// 🎯 ACTION BUTTONS (UNCHANGED)
 // ============================
 interface ActionButtonsProps {
   onMemeGeneratorClick: () => void;
@@ -1168,7 +1418,7 @@ const ActionButtons = ({
 };
 
 // ============================
-// 🏷️ BRAND HEADER
+// 🏷️ BRAND HEADER (UNCHANGED)
 // ============================
 interface BrandHeaderProps {
   level: number;
@@ -1185,7 +1435,7 @@ const BrandHeader = ({ level }: BrandHeaderProps) => (
 );
 
 // ============================
-// 💬 MEME TEXT DISPLAY
+// 💬 MEME TEXT DISPLAY (UNCHANGED)
 // ============================
 interface MemeTextDisplayProps {
   memes: MemeData;
@@ -1214,7 +1464,7 @@ const MemeTextDisplay = ({ memes, textIndex, onShowMeme }: MemeTextDisplayProps)
 );
 
 // ============================
-// 📊 RARITY BADGE
+// 📊 RARITY BADGE (UNCHANGED)
 // ============================
 interface RarityBadgeProps {
   tier: PremiumDetails;
@@ -1243,7 +1493,7 @@ const RarityBadge = ({ tier, level }: RarityBadgeProps) => (
 );
 
 // ============================
-// 🎭 MEME MODAL
+// 🎭 MEME MODAL (UNCHANGED)
 // ============================
 interface MemeModalProps {
   showMeme: boolean;
@@ -1297,7 +1547,7 @@ const MemeModal = ({ showMeme, setShowMeme, memes, level }: MemeModalProps) => (
 );
 
 // ============================
-// 🎄 MAIN 3D NFT COMPONENT - MOBILE FIRST
+// 🎄 MAIN 3D NFT COMPONENT - UPDATED WITH REAL PROVIDER
 // ============================
 interface DripmasNFT3DProps {
   level?: number;
@@ -1315,6 +1565,9 @@ export const DripmasNFT3D = ({ level = 1, currentLevel = 1 }: DripmasNFT3DProps)
   const [isClient, setIsClient] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Get Farcaster context
+  const { isInMiniApp, context } = useMiniApp();
+  
   const memes = useMemo(() => getLevelMemes(level), [level]);
   const tier = useMemo(() => getPremiumDetails(level), [level]);
 
