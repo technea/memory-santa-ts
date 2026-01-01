@@ -17,6 +17,7 @@ export default function MemoryGame() {
   const [autoHintUsed, setAutoHintUsed] = useState<boolean>(false);
   const [gameWon, setGameWon] = useState<boolean>(false);
   const [moves, setMoves] = useState<number>(0);
+  const [hintedIndices, setHintedIndices] = useState<number[]>([]);
 
   /* 🔹 AUTO FIRST MATCH HINT */
   useEffect(() => {
@@ -75,26 +76,35 @@ export default function MemoryGame() {
 
   /* 🔹 USE HINT BUTTON */
   const useHint = (): void => {
-    if (hints <= 0 || gameWon) return;
+    if (hints <= 0 || gameWon) {
+      alert('No hints available! Complete quizzes to earn more hints.');
+      return;
+    }
 
-    const unsolved = cards
-      .map((v, i) => ({ v, i }))
-      .filter(c => !solved.includes(c.i));
+    // Find unmatched cards
+    const unmatchedIndices = cards
+      .map((_, index) => index)
+      .filter(index => !solved.includes(index));
 
-    const match = unsolved.find(
-      c => unsolved.filter(x => x.v === c.v).length === 2
-    );
+    if (unmatchedIndices.length === 0) return;
 
-    if (!match) return;
-
-    const pair = unsolved
-      .filter(x => x.v === match.v)
-      .map(x => x.i);
-
-    setFlipped(pair);
+    // Use hint
     setHints(h => h - 1);
+    
+    // Temporarily reveal all unmatched cards
+    setHintedIndices(unmatchedIndices);
 
-    setTimeout(() => setFlipped([]), 1000);
+    // Flip back after 1.5 seconds
+    setTimeout(() => {
+      setHintedIndices([]);
+    }, 1500);
+  };
+
+  const earnHint = () => {
+    if (gameWon) return;
+    
+    // For now, just add a hint (in a real implementation, this would show a quiz)
+    setHints(h => Math.min(3, h + 1));
   };
 
   const resetGame = (): void => {
@@ -196,11 +206,7 @@ export default function MemoryGame() {
           </button>
 
           <button
-            onClick={() => {
-              if (hints < 3 && !gameWon) {
-                setHints(h => Math.min(3, h + 1));
-              }
-            }}
+            onClick={earnHint}
             disabled={hints >= 3 || gameWon}
             className={`px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg flex items-center gap-2 ${
               hints >= 3 || gameWon
@@ -224,7 +230,7 @@ export default function MemoryGame() {
             className={`aspect-square flex items-center justify-center text-2xl sm:text-4xl rounded-2xl cursor-pointer
               transition-all duration-300 transform select-none
               ${
-                flipped.includes(index) || solved.includes(index)
+                flipped.includes(index) || solved.includes(index) || hintedIndices.includes(index)
                   ? "bg-gradient-to-br from-white to-gray-100 text-black rotate-0 shadow-xl scale-105"
                   : "bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-600 hover:to-slate-800 border-2 border-slate-600/50 -rotate-2 shadow-inner"
               }
@@ -236,12 +242,12 @@ export default function MemoryGame() {
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
             aria-label={
-              flipped.includes(index) || solved.includes(index) 
+              flipped.includes(index) || solved.includes(index) || hintedIndices.includes(index)
                 ? `Card ${index + 1}: ${card}` 
                 : `Card ${index + 1}: face down`
             }
           >
-            {flipped.includes(index) || solved.includes(index) ? card : "❓"}
+            {flipped.includes(index) || solved.includes(index) || hintedIndices.includes(index) ? card : "❓"}
             {solved.includes(index) && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-8 h-8 bg-green-500/30 rounded-full blur-sm" />
