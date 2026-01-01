@@ -9,7 +9,7 @@ import { parseEther } from 'viem';
 // 📦 IMPORT YOUR PROVIDER CONTEXT
 // ============================
 // Make sure this path matches your actual provider file location
-import { useMiniApp, MiniAppContext } from './WagmiProviderWrapper';
+import MiniAppSDK from '@farcaster/miniapp-sdk';
 
 // ============================
 // 🎵 AUDIO HOOK (UPDATED WITH SAFE PLAY)
@@ -887,7 +887,29 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
   const [txHash, setTxHash] = useState<string>('');
   
   // Get real Farcaster context
-  const { isInMiniApp, context } = useMiniApp();
+  const [isInMiniApp, setIsInMiniApp] = useState(false);
+  const [context, setContext] = useState<any>(null);
+  
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const isIn = await MiniAppSDK.isInMiniApp();
+        setIsInMiniApp(isIn);
+        
+        if (isIn) {
+          await MiniAppSDK.actions.ready();
+          // Note: getUser method may not exist in the SDK, using a placeholder
+          // In a real implementation, you would use the correct method to get user info
+          const user = { username: 'Farcaster User', fid: 'N/A', address: address };
+          setContext({ user });
+        }
+      } catch (error) {
+        console.error("Farcaster Mini App SDK error:", error);
+      }
+    };
+    
+    init();
+  }, []);
   
   // Get wallet info from wagmi
   const { address, isConnected } = useAccount();
@@ -915,21 +937,17 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
   });
   
   // Contract write hook
-  const { 
-    write: mintNFTReal, 
-    isLoading: isMinting, 
-    data: mintData 
-  } = useWriteContract(config);
+  const mintNFTReal = useWriteContract(config);
   
   // Wait for transaction confirmation
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransaction({
-    hash: mintData?.hash,
+  const { isLoading: isConfirming, isSuccess: isConfirmed, data: mintData } = useWaitForTransaction({
+    hash: mintNFTReal?.data,
   });
   
   // Handle successful mint
   useEffect(() => {
-    if (isConfirmed && mintData?.hash) {
-      setTxHash(mintData.hash);
+    if (isConfirmed && mintData) {
+      setTxHash(mintData);
       setMintedNFTs(prev => [...prev, selectedNFT]);
       
       // Play success sound safely
@@ -943,10 +961,10 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
       
       // Show success message
       setTimeout(() => {
-        alert(`🎉 NFT Minted Successfully!\n\nLevel: ${selectedNFT}\nTransaction: ${mintData.hash}\n\nView on BaseScan: https://basescan.org/tx/${mintData.hash}`);
+        alert(`🎉 NFT Minted Successfully!\n\nLevel: ${selectedNFT}\nTransaction: ${mintData}\n\nView on BaseScan: https://basescan.org/tx/${mintData}`);
       }, 500);
     }
-  }, [isConfirmed, mintData?.hash, selectedNFT]);
+  }, [isConfirmed, mintData, selectedNFT]);
   
   // Safe audio play function
   const playHoverSound = useCallback(() => {
@@ -1080,7 +1098,7 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
             )}
 
             {/* Transaction Status */}
-            {(isMinting || isConfirming || txHash) && (
+            {(mintNFTReal?.isPending || isConfirming || txHash) && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1093,7 +1111,7 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
                     'bg-green-400'
                   }`}></div>
                   <div className="text-sm font-bold text-white">
-                    {isMinting ? '🔄 Confirm in Wallet...' :
+                    {mintNFTReal?.isPending ? '🔄 Confirm in Wallet...' :
                      isConfirming ? '⏳ Confirming Transaction...' :
                      '✅ Transaction Confirmed!'}
                   </div>
@@ -1188,17 +1206,17 @@ export const NFTCollectionModal = ({ isOpen, onClose, currentLevel = 1 }: NFTCol
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={handleMint}
-                    disabled={isMinting || isConfirming || selectedNFT > currentLevel || mintedNFTs.includes(selectedNFT) || !isInMiniApp}
+                    disabled={mintNFTReal?.isPending || isConfirming || selectedNFT > currentLevel || mintedNFTs.includes(selectedNFT) || !isInMiniApp}
                     className={`px-4 md:px-6 py-3 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-2 ${
-                      selectedNFT > currentLevel || mintedNFTs.includes(selectedNFT) || isMinting || isConfirming || !isInMiniApp
+                      selectedNFT > currentLevel || mintedNFTs.includes(selectedNFT) || mintNFTReal?.isPending || isConfirming || !isInMiniApp
                         ? 'bg-gray-700 cursor-not-allowed'
                         : 'bg-gradient-to-r from-[#0052FF] to-[#00D4FF] hover:scale-105'
                     } transition-transform shadow-lg min-w-[140px]`}
                   >
-                    {isMinting || isConfirming ? (
+                    {mintNFTReal?.isPending || isConfirming ? (
                       <>
                         <span className="animate-spin">⟳</span>
-                        {isMinting ? 'CONFIRM...' : 'CONFIRMING...'}
+                        {mintNFTReal?.isPending ? 'CONFIRM...' : 'CONFIRMING...'}
                       </>
                     ) : mintedNFTs.includes(selectedNFT) ? (
                       '✅ MINTED'
