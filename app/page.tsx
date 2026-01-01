@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Zap, Gift, Sparkles, RefreshCw, 
   ChevronLeft, ChevronRight, X, BookOpen, 
-  Wallet, Info, Brain, Target, ShieldCheck, 
-  Layers, Globe, Cpu, Lock, Star, CheckCircle,
-  ExternalLink, Home, Settings, HelpCircle,
-  Award, Clock, TrendingUp, Moon, Sun, Image, 
-  Filter, Grid, List, Key, Users, Coins, Code, 
-  Shield, Database, Network, Smartphone, Hash,
-  Eye, EyeOff, Lightbulb, Menu
+  Wallet, Brain, Target, Layers, Globe, 
+  Cpu, Lock, Star, CheckCircle, Shield, 
+  Code, Coins, Users, Network, Clock,
+  Home, Moon, Sun, Menu, Loader2, Copy, LogOut
 } from 'lucide-react';
 
 // ============================
@@ -21,12 +18,8 @@ import {
   DripmasNFT3D,
   NFTCollectionModal,
   getPremiumDetails,
-  getLevelMemes,
   MissionProgress,
-  AIMemeGenerator,
-  ChainBGame,
-  BaseLogo,
-  ChainBLogo
+  BaseLogo
 } from '../components/NFT3DCollection';
 
 // ============================
@@ -35,10 +28,10 @@ import {
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { mainnet, base } from 'wagmi/chains';
-import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+import { injected, walletConnect } from 'wagmi/connectors';
 
 // ============================
-// NFT SMART CONTRACT CONFIGURATION
+// NFT SMART CONTRACT CONFIGURATION (Real Contract)
 // ============================
 const NFT_CONTRACT_ADDRESS = "0x940DE0Ef8d4A1C80aeBd9f7944e8bFB86953edc4";
 const NFT_CONTRACT_ABI = [
@@ -63,15 +56,9 @@ const NFT_CONTRACT_ABI = [
 ];
 
 // ============================
-// ENHANCED ANIMATED BACKGROUND (UPDATED)
+// ENHANCED ANIMATED BACKGROUND
 // ============================
 const EnhancedBackground = ({ isDarkMode }: { isDarkMode: boolean }) => {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   return (
     <div className={`fixed inset-0 z-[-2] overflow-hidden transition-all duration-700 ${
       isDarkMode 
@@ -114,36 +101,12 @@ const EnhancedBackground = ({ isDarkMode }: { isDarkMode: boolean }) => {
           isDarkMode ? 'bg-purple-600/20' : 'bg-purple-200/40'
         }`}
       />
-
-      {/* Client-Only Particles */}
-      {isClient && [...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          className={`absolute w-[3px] h-[3px] ${isDarkMode ? 'bg-blue-400/40' : 'bg-blue-500/30'} rounded-full`}
-          initial={{
-            x: Math.random() * 100 + 'vw',
-            y: Math.random() * 100 + 'vh',
-            opacity: 0.2
-          }}
-          animate={{
-            x: [null, `calc(${Math.random() * 100}vw + ${Math.random() * 200 - 100}px)`],
-            y: [null, `calc(${Math.random() * 100}vh + ${Math.random() * 200 - 100}px)`],
-            opacity: [0.2, 0.8, 0.2],
-            scale: [1, 1.5, 1]
-          }}
-          transition={{
-            duration: 15 + Math.random() * 15,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: Math.random() * 5
-          }}
-        />
-      ))}
     </div>
   );
 };
+
 // ============================
-// LEVEL CONFIG (10 LEVELS) - SAME
+// LEVEL CONFIG (10 LEVELS)
 // ============================
 const LEVEL_CONFIG: Record<number, any> = {
   1: { pairs: 4, cols: 4, rows: 2, moves3: 10, moves2: 14, points: 100 },
@@ -159,109 +122,7 @@ const LEVEL_CONFIG: Record<number, any> = {
 };
 
 // ============================
-// LEVEL LEARNING CONTENT (10 LEVELS) - SAME
-// ============================
-const LEVEL_LEARNING: Record<number, any> = {
-  1: {
-    title: "The Base Vision",
-    icon: <Globe className="text-blue-400" />,
-    content: "Base is a secure, low-cost, builder-friendly Ethereum L2 built to bring the next billion users onchain.",
-    funFact: "Base is incubated within Coinbase, leveraging 10 years of crypto experience."
-  },
-  2: {
-    title: "The Superchain & OP Stack",
-    icon: <Layers className="text-blue-400" />,
-    content: "Base is built on the OP Stack in collaboration with Optimism, making it part of a unified 'Superchain'.",
-    funFact: "The Superchain allows different L2s to share security and communication layers!"
-  },
-  3: {
-    title: "Account Abstraction",
-    icon: <Cpu className="text-blue-400" />,
-    content: "Base supports Smart Wallets, allowing users to pay gas with any token or even use FaceID to sign transactions.",
-    funFact: "Smart Wallets remove the need for complex seed phrases for new users."
-  },
-  4: {
-    title: "EIP-4844 (Blobs)",
-    icon: <Zap className="text-blue-400" />,
-    content: "Base utilizes 'Blobs' to store data on Ethereum efficiently, which drastically reduced fees in 2024.",
-    funFact: "After EIP-4844, transaction fees on Base dropped by over 90%!"
-  },
-  5: {
-    title: "Onchain Summer",
-    icon: <Sparkles className="text-blue-400" />,
-    content: "Base is the home of onchain culture, from world-class art to social protocols like Farcaster.",
-    funFact: "Thousands of developers build on Base because it's EVM-equivalent."
-  },
-  6: {
-    title: "Security & Audits",
-    icon: <Shield className="text-blue-400" />,
-    content: "Base inherits Ethereum's security and undergoes regular audits by top security firms.",
-    funFact: "Base has never been hacked thanks to its rigorous security protocols."
-  },
-  7: {
-    title: "Developer Tools",
-    icon: <Code className="text-blue-400" />,
-    content: "Base offers powerful developer tools like Foundry, Hardhat, and comprehensive documentation.",
-    funFact: "Base has the most developer-friendly documentation in the blockchain space."
-  },
-  8: {
-    title: "DeFi Ecosystem",
-    icon: <Coins className="text-blue-400" />,
-    content: "Base hosts top DeFi protocols with billions in TVL, offering high yields and low fees.",
-    funFact: "Base has over $10B in total value locked across various DeFi protocols."
-  },
-  9: {
-    title: "Social & NFTs",
-    icon: <Users className="text-blue-400" />,
-    content: "Base is becoming the hub for social apps and NFT communities with minimal fees.",
-    funFact: "Farcaster, a decentralized social network, runs entirely on Base."
-  },
-  10: {
-    title: "Future of Onchain",
-    icon: <Network className="text-blue-400" />,
-    content: "Base is paving the way for the future where everything from identity to finance lives onchain.",
-    funFact: "Base processes millions of transactions daily with sub-cent fees."
-  }
-};
-
-// ============================
-// QUIZ QUESTIONS - SAME
-// ============================
-const QUIZ_QUESTIONS: any[] = [
-  {
-    question: "Which open-source stack is Base built on?",
-    answer: "op stack",
-    explanation: "Correct! Base is built on the OP Stack by Optimism.",
-    reward: "+1 Hint"
-  },
-  {
-    question: "Base is an Ethereum _____ blockchain (Layer 1 or Layer 2?)",
-    answer: "layer 2",
-    explanation: "Exactly! It scales Ethereum as a Layer 2.",
-    reward: "+1 Hint"
-  },
-  {
-    question: "What is the collective of chains like Base and Optimism called?",
-    answer: "superchain",
-    explanation: "Correct! They form the Superchain ecosystem.",
-    reward: "+1 Hint"
-  },
-  {
-    question: "True or False: Base has its own native network token.",
-    answer: "false",
-    explanation: "Correct! Base uses ETH for gas and does not have a native token.",
-    reward: "+1 Hint"
-  },
-  {
-    question: "Which company incubated Base?",
-    answer: "coinbase",
-    explanation: "Yes! Base is incubated by Coinbase.",
-    reward: "+1 Hint"
-  }
-];
-
-// ============================
-// CARD COMPONENT - SAME
+// CARD COMPONENT
 // ============================
 const PremiumCard = ({ isFlipped, isMatched, onClick, value, isDarkMode }: any) => {
   const asset = useMemo(() => [
@@ -270,8 +131,7 @@ const PremiumCard = ({ isFlipped, isMatched, onClick, value, isDarkMode }: any) 
     { icon: '🌈', label: 'NFT' }, { icon: '🏗️', label: 'Build' },
     { icon: '📱', label: 'Smart' }, { icon: '🤝', label: 'Social' },
     { icon: '💰', label: 'DeFi' }, { icon: '🚀', label: 'Scale' },
-    { icon: '🔐', label: 'Safe' }, { icon: '🌐', label: 'Web3' },
-    { icon: '🎨', label: 'Art' }, { icon: '📊', label: 'Data' }
+    { icon: '🔐', label: 'Safe' }, { icon: '🌐', label: 'Web3' }
   ][value % 12], [value]);
 
   return (
@@ -303,9 +163,7 @@ const PremiumCard = ({ isFlipped, isMatched, onClick, value, isDarkMode }: any) 
               : 'bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.4),transparent)]'
           }`} />
           <span className="text-3xl font-bold text-white mb-1">ⓑ</span>
-          <span className={`text-[10px] font-black ${
-            isDarkMode ? 'text-white/50' : 'text-white/70'
-          } tracking-widest`}>BASE</span>
+          <span className={`text-[10px] font-black text-white/70 tracking-widest`}>BASE</span>
         </div>
         
         {/* Back */}
@@ -333,62 +191,36 @@ const PremiumCard = ({ isFlipped, isMatched, onClick, value, isDarkMode }: any) 
 };
 
 // ============================
-// HINT SYSTEM COMPONENT - SAME
+// HINT SYSTEM COMPONENT
 // ============================
 const HintSystem = ({ 
-  gameBoard, 
-  matchedPairs, 
-  flippedCards, 
   onUseHint,
   availableHints,
   isDarkMode 
 }: any) => {
-  const [showHint, setShowHint] = useState(false);
-  const [hintIndex, setHintIndex] = useState<number | null>(null);
-
   const getHint = () => {
-    if (availableHints <= 0 || matchedPairs.size === gameBoard.length) return;
-    
-    const unmatchedCards = gameBoard.filter((card: any) => 
-      !matchedPairs.has(card.id) && !flippedCards.has(card.id)
-    );
-    
-    if (unmatchedCards.length < 2) return;
-    
-    const firstCard = unmatchedCards[0];
-    const matchingCard = gameBoard.find((card: any) => 
-      card.value === firstCard.value && card.id !== firstCard.id && !matchedPairs.has(card.id)
-    );
-    
-    if (matchingCard) {
-      setHintIndex(firstCard.id);
-      setTimeout(() => setHintIndex(matchingCard.id), 500);
-      onUseHint();
-      
-      setTimeout(() => {
-        setHintIndex(null);
-      }, 2000);
-    }
+    if (availableHints <= 0) return;
+    onUseHint();
   };
 
   return (
     <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-800/50' : 'bg-blue-50'} mb-4`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Lightbulb size={18} className={isDarkMode ? "text-yellow-400" : "text-yellow-600"} />
+          <Brain size={18} className={isDarkMode ? "text-yellow-400" : "text-yellow-600"} />
           <span className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
             Hint System ({availableHints} left)
           </span>
         </div>
         <button
           onClick={getHint}
-          disabled={availableHints <= 0 || matchedPairs.size === gameBoard.length}
+          disabled={availableHints <= 0}
           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-            availableHints > 0 && matchedPairs.size !== gameBoard.length
+            availableHints > 0
               ? isDarkMode 
                 ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
                 : 'bg-yellow-500 hover:bg-yellow-600 text-white'
-              : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+              : 'bg-gray-400 text-gray-300 cursor-not-allowed'
           }`}
         >
           Use Hint
@@ -396,26 +228,14 @@ const HintSystem = ({
       </div>
       
       <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} mb-2`}>
-        Click to reveal two matching cards for 3 seconds
+        Reveals two matching cards for 3 seconds
       </p>
-      
-      {hintIndex !== null && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className={`text-center p-2 rounded-lg ${isDarkMode ? 'bg-yellow-500/20' : 'bg-yellow-100'}`}
-        >
-          <span className={`text-sm font-bold ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
-            💡 Look at card #{hintIndex + 1}!
-          </span>
-        </motion.div>
-      )}
     </div>
   );
 };
 
 // ============================
-// MAIN COMPONENT - UPDATED FOR FARCASTER MINI-APP LAYOUT
+// MAIN COMPONENT
 // ============================
 export default function BaseMemoryGame() {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -427,43 +247,38 @@ export default function BaseMemoryGame() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showLearning, setShowLearning] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
   const [availableHints, setAvailableHints] = useState(3);
   const [completedLevels, setCompletedLevels] = useState<number[]>([1]);
   const [isLevelCompleted, setIsLevelCompleted] = useState(false);
-  const [quizAnswer, setQuizAnswer] = useState('');
-  const [quizFeedback, setQuizFeedback] = useState('');
-  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
   const [showLevelSelect, setShowLevelSelect] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode
   const [activeTab, setActiveTab] = useState<'game' | 'collection' | 'missions'>('game');
   const [nftMintingStatus, setNftMintingStatus] = useState<Record<number, boolean>>({});
   const [showMintModal, setShowMintModal] = useState(false);
   const [mintingLevel, setMintingLevel] = useState<number | null>(null);
   const [mintTransactionHash, setMintTransactionHash] = useState<string | null>(null);
   const [showUserNFTCollection, setShowUserNFTCollection] = useState(false);
-  const [showAIMemeGenerator, setShowAIMemeGenerator] = useState(false);
-  const [showChainBGame, setShowChainBGame] = useState(false);
   const [showUserMissionProgress, setShowUserMissionProgress] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showMintButton, setShowMintButton] = useState(false);
+  const [tempFlippedCards, setTempFlippedCards] = useState<Set<number>>(new Set());
+  const [connectingWallet, setConnectingWallet] = useState(false);
 
   // WAGMI hooks
-  const { address, isConnected, chainId } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { chains, switchChain } = useSwitchChain();
+  const { address, isConnected, chainId, isConnecting } = useAccount();
+  const { connectAsync, connectors } = useConnect();
+  const { disconnectAsync } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
   const { 
-    writeContract, 
+    writeContractAsync, 
     isPending: isMintPending, 
-    isSuccess: isMintStarted,
-    data: mintHash,
     error: mintError
   } = useWriteContract();
   const { 
     isLoading: isConfirming, 
     isSuccess: isMintConfirmed 
-  } = useWaitForTransactionReceipt({ hash: mintHash });
+  } = useWaitForTransactionReceipt({ hash: mintTransactionHash as `0x${string}` });
 
   const config = LEVEL_CONFIG[currentLevel] || LEVEL_CONFIG[1];
 
@@ -493,11 +308,13 @@ export default function BaseMemoryGame() {
     
     setGameBoard(values);
     setFlippedCards(new Set());
+    setTempFlippedCards(new Set());
     setMatchedPairs(new Set());
     setMoves(0);
     setTimer(0);
     setIsTimerRunning(false);
     setIsLevelCompleted(false);
+    setShowMintButton(false);
   }, [config]);
 
   useEffect(() => {
@@ -522,8 +339,8 @@ export default function BaseMemoryGame() {
       setUserPoints(parseInt(savedPoints) || 0);
     }
     
-    if (savedTheme === 'light') {
-      setIsDarkMode(false);
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
     }
     
     if (savedMintStatus) {
@@ -574,7 +391,7 @@ export default function BaseMemoryGame() {
   }, [isMintConfirmed, mintingLevel]);
 
   const handleCardClick = (id: number) => {
-    if (flippedCards.size >= 2 || matchedPairs.has(id) || flippedCards.has(id) || isLevelCompleted) return;
+    if (flippedCards.size >= 2 || matchedPairs.has(id) || flippedCards.has(id) || isLevelCompleted || tempFlippedCards.has(id)) return;
     
     if (!isTimerRunning) setIsTimerRunning(true);
     const newFlipped = new Set(flippedCards).add(id);
@@ -598,6 +415,7 @@ export default function BaseMemoryGame() {
               if (!completedLevels.includes(currentLevel) && currentLevel <= 10) {
                 setCompletedLevels(prev => [...prev, currentLevel]);
               }
+              setShowMintButton(true);
               setTimeout(() => {
                 setShowCelebration(true);
               }, 800);
@@ -612,48 +430,73 @@ export default function BaseMemoryGame() {
     }
   };
 
-  const connectWallet = async () => {
-    try {
-      if (!isConnected) {
-        // Try injected first (MetaMask)
-        try {
-          await connect({ connector: injected({}) });
-          setShowWalletModal(false);
-        } catch (injectedError) {
-          console.log('Injected wallet not available, trying WalletConnect...');
-          // Fallback to WalletConnect
-          await connect({ connector: walletConnect({ projectId: 'YOUR_WALLETCONNECT_PROJECT_ID' }) });
-          setShowWalletModal(false);
-        }
-      }
-    } catch (e) { 
-      console.error('Failed to connect wallet:', e);
-      alert('Failed to connect wallet. Please make sure you have MetaMask or Coinbase Wallet installed.');
+  const useHint = () => {
+    if (availableHints <= 0) return;
+    
+    const unmatchedCards = gameBoard.filter((card: any) => 
+      !matchedPairs.has(card.id) && !flippedCards.has(card.id) && !tempFlippedCards.has(card.id)
+    );
+    
+    if (unmatchedCards.length < 2) return;
+    
+    const firstCard = unmatchedCards[0];
+    const matchingCard = gameBoard.find((card: any) => 
+      card.value === firstCard.value && card.id !== firstCard.id && !matchedPairs.has(card.id)
+    );
+    
+    if (matchingCard) {
+      setTempFlippedCards(new Set([firstCard.id, matchingCard.id]));
+      setAvailableHints(prev => prev - 1);
+      
+      setTimeout(() => {
+        setTempFlippedCards(new Set());
+      }, 3000);
     }
   };
 
-  const disconnectWallet = () => {
-    disconnect();
-    setShowWalletModal(false);
+  const connectWallet = async (connectorType: 'injected' | 'walletConnect') => {
+    try {
+      setConnectingWallet(true);
+      const connector = connectors.find(c => 
+        connectorType === 'injected' ? c.id === 'injected' : c.id === 'walletConnect'
+      );
+      
+      if (!connector) throw new Error('Connector not found');
+      
+      await connectAsync({ connector });
+      setShowWalletModal(false);
+    } catch (error: any) {
+      console.error('Failed to connect wallet:', error);
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
+
+  const disconnectWallet = async () => {
+    try {
+      await disconnectAsync();
+      setShowWalletModal(false);
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
   };
 
   const switchToBaseNetwork = async () => {
     try {
-      await switchChain({ chainId: base.id });
+      await switchChainAsync({ chainId: base.id });
     } catch (error) {
       console.error('Failed to switch to Base network:', error);
-      alert('Please switch to Base network manually in your wallet.');
     }
   };
 
   const mintNFT = async (level: number) => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       setShowWalletModal(true);
       return;
     }
     
     if (chainId !== base.id) {
-      const shouldSwitch = confirm('You need to be on Base network to mint NFTs. Switch to Base network?');
+      const shouldSwitch = window.confirm('You need to be on Base network to mint NFTs. Switch to Base network?');
       if (shouldSwitch) {
         await switchToBaseNetwork();
       }
@@ -664,64 +507,27 @@ export default function BaseMemoryGame() {
     setShowMintModal(true);
     
     try {
-      const tier = getPremiumDetails(level);
       const tokenId = level;
-      const tokenURI = `https://your-metadata-server.com/nft/${level}.json`;
+      const tokenURI = `https://ipfs.io/ipfs/QmYourIPFSCID/${level}.json`;
       
-      writeContract({
+      const hash = await writeContractAsync({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_CONTRACT_ABI,
         functionName: 'safeMint',
-        args: [address as `0x${string}`, BigInt(tokenId), tokenURI],
-        chainId: base.id,
+        args: [address, BigInt(tokenId), tokenURI],
       });
       
-      if (mintHash) {
-        setMintTransactionHash(mintHash);
-      }
-      
-    } catch (error) {
+      setMintTransactionHash(hash);
+    } catch (error: any) {
       console.error('Minting failed:', error);
-      alert(`Minting failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert(`Minting failed: ${error.message || 'Unknown error'}`);
       setShowMintModal(false);
       setMintingLevel(null);
     }
   };
 
-  const useHint = () => {
-    if (availableHints <= 0) {
-      alert('No hints available! Complete quizzes to earn more hints.');
-      return;
-    }
-    setAvailableHints(prev => prev - 1);
-  };
-
-  const earnHint = () => {
-    if (isLevelCompleted) return;
-    
-    const randomQuiz = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
-    setCurrentQuiz(randomQuiz);
-    setShowQuiz(true);
-    setQuizAnswer('');
-    setQuizFeedback('');
-  };
-
-  const submitQuizAnswer = () => {
-    if (!currentQuiz || !quizAnswer.trim()) return;
-    
-    const isCorrect = quizAnswer.trim().toLowerCase() === currentQuiz.answer.toLowerCase();
-    if (isCorrect) {
-      setQuizFeedback(`✅ ${currentQuiz.explanation} ${currentQuiz.reward}`);
-      setAvailableHints(prev => prev + 1);
-    } else {
-      setQuizFeedback(`❌ Not quite. The correct answer is: "${currentQuiz.answer}".`);
-    }
-    
-    setTimeout(() => {
-      setShowQuiz(false);
-      setQuizFeedback('');
-      setQuizAnswer('');
-    }, isCorrect ? 1500 : 2000);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   const nextLevel = () => {
@@ -762,14 +568,15 @@ export default function BaseMemoryGame() {
 
   return (
     <div
-      className={`w-full min-h-screen transition-all duration-300 ${isDarkMode ? 'text-slate-100 bg-[#0a0a0f]' : 'text-slate-900 bg-white'} font-sans selection:bg-blue-500/30 overflow-x-hidden`}
+      className={`w-full min-h-screen transition-all duration-300 ${
+        isDarkMode ? 'text-white bg-[#0a0a0f]' : 'text-gray-900 bg-white'
+      } font-sans overflow-x-hidden`}
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}
     >
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
         body { 
           font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          font-feature-settings: "ss01", "ss02", "cv01", "cv02";
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
@@ -777,45 +584,47 @@ export default function BaseMemoryGame() {
           backface-visibility: hidden; 
           -webkit-backface-visibility: hidden;
         }
-        * {
-          box-sizing: border-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 82, 255, 0.18); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 82, 255, 0.3); }
       `}</style>
 
       <EnhancedBackground isDarkMode={isDarkMode} />
 
-      {/* FARCASTER STYLE HEADER */}
-      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10 px-4 py-3">
+      {/* HEADER */}
+      <header className={`sticky top-0 z-50 backdrop-blur-xl border-b px-4 py-3 ${
+        isDarkMode ? 'bg-black/80 border-white/10' : 'bg-white/80 border-gray-200'
+      }`}>
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors" title="Menu">
-              <Menu size={20} />
+            <button className={`p-2 rounded-lg transition-colors ${
+              isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
+            }`} title="Menu">
+              <Menu size={20} className={isDarkMode ? "text-white" : "text-gray-900"} />
             </button>
             <div className="flex items-center gap-2">
               <BaseLogo size={24} />
-              <span className={`font-bold text-sm transition-colors duration-300 ${
-  isDarkMode ? 'text-slate-100' : 'text-slate-300'
-}`}>
-  Base Memory
-</span>
+              <span className={`font-bold text-sm ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Base Memory
+              </span>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
             <button 
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors" 
+              className={`p-2 rounded-lg transition-colors ${
+                isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
+              }`} 
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDarkMode ? 
+                <Sun size={18} className="text-white" /> : 
+                <Moon size={18} className="text-gray-900" />
+              }
             </button>
             
             <button 
               onClick={() => setShowWalletModal(true)}
-              className="px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-xs font-semibold transition-colors flex items-center gap-1">
+              className="px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition-colors flex items-center gap-1">
               {isConnected ? (
                 <>
                   <Wallet size={14} />
@@ -838,31 +647,41 @@ export default function BaseMemoryGame() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h1 className="text-xl font-bold">Level {currentLevel}</h1>
-              <p className="text-sm text-gray-400">{LEVEL_LEARNING[currentLevel]?.title}</p>
+              <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Level {currentLevel}
+              </h1>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Match {config.pairs} pairs of cards
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={previousLevel}
                 disabled={currentLevel === 1}
-                className="p-1.5 rounded-lg bg-white/5 disabled:opacity-30"
+                className={`p-1.5 rounded-lg transition-colors disabled:opacity-30 ${
+                  isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
                 title="Previous Level"
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={18} className={isDarkMode ? "text-white" : "text-gray-900"} />
               </button>
               <button 
                 onClick={nextLevel}
                 disabled={currentLevel === 10 || !isLevelUnlocked(currentLevel + 1)}
-                className="p-1.5 rounded-lg bg-white/5 disabled:opacity-30"
+                className={`p-1.5 rounded-lg transition-colors disabled:opacity-30 ${
+                  isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
                 title="Next Level"
               >
-                <ChevronRight size={18} />
+                <ChevronRight size={18} className={isDarkMode ? "text-white" : "text-gray-900"} />
               </button>
             </div>
           </div>
           
           {/* Progress Bar */}
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div className={`h-1.5 rounded-full overflow-hidden ${
+            isDarkMode ? 'bg-white/10' : 'bg-gray-200'
+          }`}>
             <div 
               className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300"
               style={{ width: `${(matchedPairs.size / gameBoard.length) * 100}%` }}
@@ -873,39 +692,44 @@ export default function BaseMemoryGame() {
         {/* Stats Dashboard */}
         <div className="grid grid-cols-4 gap-2 mb-6">
           {[
-            { label: 'Moves', val: moves, icon: <Target size={14}/> },
-            { label: 'Time', val: formatTime(timer), icon: <Clock size={14}/> },
-            { label: 'Hints', val: availableHints, icon: <Brain size={14}/> },
-            { label: 'Points', val: userPoints, icon: <Trophy size={14}/> },
+            { label: 'Moves', val: moves, icon: <Target size={14} /> },
+            { label: 'Time', val: formatTime(timer), icon: <Clock size={14} /> },
+            { label: 'Hints', val: availableHints, icon: <Brain size={14} /> },
+            { label: 'Points', val: userPoints, icon: <Trophy size={14} /> },
           ].map((s, i) => (
-            <div key={i} className={`${isDarkMode ? 'bg-white/5' : 'bg-slate-100'} rounded-xl p-3 text-center`}>
-              <div className={`flex items-center justify-center gap-1 ${isDarkMode ? 'text-gray-400' : 'text-slate-600'} mb-1`}>
+            <div key={i} className={`rounded-xl p-3 text-center ${
+              isDarkMode ? 'bg-white/5' : 'bg-gray-100'
+            }`}>
+              <div className={`flex items-center justify-center gap-1 mb-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 {s.icon}
                 <span className="text-[10px] font-semibold">{s.label}</span>
               </div>
-              <div className="text-lg font-bold text-blue-500">{s.val}</div>
+              <div className={`text-lg font-bold ${
+                isDarkMode ? 'text-blue-400' : 'text-blue-600'
+              }`}>{s.val}</div>
             </div>
           ))}
         </div>
 
         {/* NFT Preview Section */}
         <div className="mb-6">
-          <DripmasNFT3D 
-            level={currentLevel} 
-            currentLevel={Math.max(...completedLevels, 1)}
-          />
-          <div className="mt-3 text-center">
-            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
-              Reward: {currentTier.name} ({config.points} points)
-            </span>
+          <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-blue-500/10 to-cyan-500/10 p-6">
+            <div className="text-center">
+              <div className="text-4xl mb-2">🏆</div>
+              <h3 className={`text-lg font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Level {currentLevel} Reward
+              </h3>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {currentTier.name} - {config.points} points
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Hint System */}
         <HintSystem
-          gameBoard={gameBoard}
-          matchedPairs={matchedPairs}
-          flippedCards={flippedCards}
           onUseHint={useHint}
           availableHints={availableHints}
           isDarkMode={isDarkMode}
@@ -913,17 +737,49 @@ export default function BaseMemoryGame() {
 
         {/* Game Grid */}
         {isLevelCompleted ? (
-          <div className={`mb-6 p-6 ${isDarkMode ? 'bg-green-500/10 border-green-500/20' : 'bg-green-50 border-green-200'} border rounded-2xl text-center`}>
+          <div className={`mb-6 p-6 rounded-2xl text-center border ${
+            isDarkMode 
+              ? 'bg-green-500/10 border-green-500/20' 
+              : 'bg-green-50 border-green-200'
+          }`}>
             <div className="text-5xl mb-4">🎉</div>
-            <h3 className="text-xl font-bold mb-2">Level {currentLevel} Complete!</h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Level {currentLevel} Complete!
+            </h3>
+            <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               You matched all {config.pairs} pairs in {moves} moves!
             </p>
+            
+            {/* NFT MINT BUTTON */}
+            {showMintButton && !nftMintingStatus[currentLevel] && (
+              <div className="mb-4">
+                <button
+                  onClick={() => mintNFT(currentLevel)}
+                  className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full font-bold text-sm text-white hover:opacity-90 transition-opacity mb-2"
+                >
+                  🪙 Mint Level {currentLevel} NFT
+                </button>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Mint your NFT reward on Base network
+                </p>
+              </div>
+            )}
+            
+            {nftMintingStatus[currentLevel] && (
+              <div className={`mb-4 p-3 rounded-lg ${
+                isDarkMode ? 'bg-green-500/10' : 'bg-green-50'
+              }`}>
+                <p className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  ✅ NFT Already Minted!
+                </p>
+              </div>
+            )}
+            
             <button
               onClick={() => setShowCelebration(true)}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full font-bold text-sm text-white w-full"
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full font-bold text-sm text-white w-full hover:opacity-90 transition-opacity"
             >
-              Claim Reward
+              View Rewards
             </button>
           </div>
         ) : (
@@ -934,7 +790,7 @@ export default function BaseMemoryGame() {
             {gameBoard.map((card) => (
               <PremiumCard
                 key={card.id}
-                isFlipped={flippedCards.has(card.id)}
+                isFlipped={flippedCards.has(card.id) || tempFlippedCards.has(card.id)}
                 isMatched={matchedPairs.has(card.id)}
                 onClick={() => handleCardClick(card.id)}
                 value={card.value}
@@ -947,11 +803,12 @@ export default function BaseMemoryGame() {
         {/* Game Controls */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <button 
-            onClick={earnHint}
-            disabled={isLevelCompleted}
-            className={`py-3 rounded-xl ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-slate-100 hover:bg-slate-200'} transition-colors disabled:opacity-40 flex flex-col items-center gap-1`}>
-            <Brain size={18} className={isDarkMode ? "text-purple-400" : "text-purple-500"} />
-            <span className="text-xs font-semibold">Earn Hint</span>
+            onClick={() => setShowWalletModal(true)}
+            className={`py-3 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+              isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
+            }`}>
+            <Wallet size={18} className={isDarkMode ? "text-purple-400" : "text-purple-500"} />
+            <span className="text-xs font-semibold">Wallet</span>
           </button>
           
           <button 
@@ -963,7 +820,9 @@ export default function BaseMemoryGame() {
           
           <button 
             onClick={() => setShowLearning(true)}
-            className={`py-3 rounded-xl ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-slate-100 hover:bg-slate-200'} transition-colors flex flex-col items-center gap-1`}>
+            className={`py-3 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+              isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
+            }`}>
             <BookOpen size={18} className={isDarkMode ? "text-cyan-400" : "text-cyan-500"} />
             <span className="text-xs font-semibold">Learn</span>
           </button>
@@ -972,19 +831,23 @@ export default function BaseMemoryGame() {
         {/* Level Progress */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-gray-400">Progress: {completedLevels.length}/10 levels</span>
+            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Progress: {completedLevels.length}/10 levels
+            </span>
             <div className="flex gap-1">
               {[1, 2, 3].map((star) => (
                 <div
                   key={star}
-                  className={`text-sm ${star <= currentStars ? 'text-yellow-400' : 'text-gray-600'}`}
+                  className={`text-sm ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
                 >
                   ★
                 </div>
               ))}
             </div>
           </div>
-          <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+          <div className={`w-full h-2 rounded-full overflow-hidden ${
+            isDarkMode ? 'bg-white/10' : 'bg-gray-200'
+          }`}>
             <div 
               className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500"
               style={{ width: `${(completedLevels.length / 10) * 100}%` }}
@@ -993,12 +856,20 @@ export default function BaseMemoryGame() {
         </div>
       </main>
 
-      {/* BOTTOM NAVIGATION - FARCASTER STYLE */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-t border-white/10 px-4 py-3">
+      {/* BOTTOM NAVIGATION */}
+      <nav className={`fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t px-4 py-3 ${
+        isDarkMode ? 'bg-black/80 border-white/10' : 'bg-white/80 border-gray-200'
+      }`}>
         <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
           <button 
             onClick={() => setActiveTab('game')}
-            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${activeTab === 'game' ? 'bg-blue-600' : 'hover:bg-white/5'}`}
+            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+              activeTab === 'game' 
+                ? 'bg-blue-600 text-white' 
+                : isDarkMode 
+                  ? 'hover:bg-white/5 text-white' 
+                  : 'hover:bg-gray-100 text-gray-900'
+            }`}
             title="Game"
           >
             <Home size={20} />
@@ -1006,11 +877,14 @@ export default function BaseMemoryGame() {
           </button>
           
           <button 
-            onClick={() => {
-              setActiveTab('collection');
-              setShowUserNFTCollection(true);
-            }}
-            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${activeTab === 'collection' ? 'bg-blue-600' : 'hover:bg-white/5'}`}
+            onClick={() => setShowUserNFTCollection(true)}
+            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+              activeTab === 'collection' 
+                ? 'bg-blue-600 text-white' 
+                : isDarkMode 
+                  ? 'hover:bg-white/5 text-white' 
+                  : 'hover:bg-gray-100 text-gray-900'
+            }`}
             title="View NFT Collection"
           >
             <Trophy size={20} />
@@ -1018,11 +892,14 @@ export default function BaseMemoryGame() {
           </button>
           
           <button 
-            onClick={() => {
-              setActiveTab('missions');
-              setShowUserMissionProgress(true);
-            }}
-            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${activeTab === 'missions' ? 'bg-blue-600' : 'hover:bg-white/5'}`}
+            onClick={() => setShowUserMissionProgress(true)}
+            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+              activeTab === 'missions' 
+                ? 'bg-blue-600 text-white' 
+                : isDarkMode 
+                  ? 'hover:bg-white/5 text-white' 
+                  : 'hover:bg-gray-100 text-gray-900'
+            }`}
             title="View Missions"
           >
             <Target size={20} />
@@ -1031,7 +908,11 @@ export default function BaseMemoryGame() {
           
           <button 
             onClick={() => setShowLevelSelect(true)}
-            className="py-3 rounded-lg flex flex-col items-center gap-1 hover:bg-white/5 transition-colors"
+            className={`py-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+              isDarkMode 
+                ? 'hover:bg-white/5 text-white' 
+                : 'hover:bg-gray-100 text-gray-900'
+            }`}
             title="Select Level"
           >
             <Layers size={20} />
@@ -1040,148 +921,135 @@ export default function BaseMemoryGame() {
         </div>
       </nav>
 
-      {/* WALLET MODAL */}
+      {/* WALLET MODAL - UPDATED FOR FARCASTER */}
       <AnimatePresence>
         {showWalletModal && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowWalletModal(false)}
           >
             <motion.div 
               initial={{ y: 100 }} animate={{ y: 0 }}
-              className="w-full max-w-sm bg-[#1a1a1f] rounded-2xl p-6 border border-white/10 relative"
+              className={`w-full max-w-sm rounded-2xl p-6 border ${
+                isDarkMode ? 'bg-[#1a1a1f] border-white/10' : 'bg-white border-gray-200'
+              } relative`}
+              onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={() => setShowWalletModal(false)}
-                className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white"
+                className={`absolute top-4 right-4 p-1 ${
+                  isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'
+                }`}
               >
                 <X size={20} />
               </button>
               
-              <h3 className="text-lg font-bold mb-4">Connect Wallet</h3>
+              <h3 className={`text-lg font-bold mb-4 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                {isConnected ? 'Wallet' : 'Connect Wallet'}
+              </h3>
               
               {isConnected ? (
                 <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-white/5">
-                    <div className="text-sm text-gray-400">Connected as</div>
-                    <div className="font-mono text-sm truncate">{address}</div>
+                  <div className={`p-4 rounded-xl ${
+                    isDarkMode ? 'bg-white/5' : 'bg-gray-100'
+                  }`}>
+                    <div className={`text-sm mb-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Connected Wallet</div>
+                    <div className="flex items-center justify-between">
+                      <div className="font-mono text-sm truncate">{address}</div>
+                      <button 
+                        onClick={() => copyToClipboard(address || '')}
+                        className="p-1 hover:opacity-80"
+                        title="Copy address"
+                      >
+                        <Copy size={16} className={isDarkMode ? "text-gray-400" : "text-gray-600"} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className={`p-4 rounded-xl ${
+                    isDarkMode ? 'bg-white/5' : 'bg-gray-100'
+                  }`}>
+                    <div className={`text-sm mb-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Network</div>
+                    <div className={`flex items-center gap-2 ${
+                      chainId === base.id ? 'text-green-500' : 'text-yellow-500'
+                    }`}>
+                      {chainId === base.id ? '✅ Base Network' : `🌐 Chain ID: ${chainId}`}
+                    </div>
                   </div>
                   
                   {chainId !== base.id && (
                     <button
                       onClick={switchToBaseNetwork}
-                      className="w-full py-3 rounded-xl bg-yellow-600 hover:bg-yellow-700 text-white font-semibold transition-colors"
+                      className="w-full py-3 rounded-xl bg-yellow-600 hover:bg-yellow-700 text-white font-semibold transition-colors flex items-center justify-center gap-2"
+                      disabled={connectingWallet}
                     >
-                      Switch to Base Network
+                      {connectingWallet ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        'Switch to Base Network'
+                      )}
                     </button>
                   )}
                   
                   <button
                     onClick={disconnectWallet}
-                    className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors"
+                    className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors flex items-center justify-center gap-2"
                   >
+                    <LogOut size={18} />
                     Disconnect Wallet
                   </button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <button
-                    onClick={connectWallet}
-                    className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between"
+                    onClick={() => connectWallet('injected')}
+                    disabled={connectingWallet}
+                    className={`w-full p-4 rounded-xl transition-colors flex items-center justify-between ${
+                      isDarkMode 
+                        ? 'bg-white/5 hover:bg-white/10 text-white' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <Wallet size={20} />
-                      <span>MetaMask / Injected</span>
+                      <span>Browser Wallet</span>
                     </div>
+                    {connectingWallet && <Loader2 size={18} className="animate-spin" />}
                   </button>
                   
                   <button
-                    onClick={() => connect({ connector: walletConnect({ projectId: 'YOUR_WALLETCONNECT_PROJECT_ID' }) })}
-                    className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between"
+                    onClick={() => connectWallet('walletConnect')}
+                    disabled={connectingWallet}
+                    className={`w-full p-4 rounded-xl transition-colors flex items-center justify-between ${
+                      isDarkMode 
+                        ? 'bg-white/5 hover:bg-white/10 text-white' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Wallet size={20} />
+                      <div className="w-5 h-5 bg-[#3b99fc] rounded-full flex items-center justify-center">
+                        <div className="w-3 h-3 bg-white rounded-full"></div>
+                      </div>
                       <span>WalletConnect</span>
                     </div>
+                    {connectingWallet && <Loader2 size={18} className="animate-spin" />}
                   </button>
+                  
+                  <div className={`text-xs mt-4 text-center ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    Connect your wallet to mint NFTs and track progress
+                  </div>
                 </div>
               )}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* REST OF THE MODALS REMAIN THE SAME */}
-      <NFTCollectionModal
-        isOpen={showUserNFTCollection}
-        onClose={() => setShowUserNFTCollection(false)}
-        currentLevel={Math.max(...completedLevels, 1)}
-      />
-
-      <AnimatePresence>
-        {showAIMemeGenerator && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
-            onClick={() => setShowAIMemeGenerator(false)}
-          >
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <AIMemeGenerator level={currentLevel} />
-              <button
-                onClick={() => setShowAIMemeGenerator(false)}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
-              >
-                🚀 CLOSE GENERATOR
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Chain B Game Modal */}
-      <AnimatePresence>
-        {showChainBGame && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
-            onClick={() => setShowChainBGame(false)}
-          >
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <ChainBGame />
-              <button
-                onClick={() => setShowChainBGame(false)}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
-              >
-                🎮 CLOSE GAME
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Mission Progress Modal */}
-      <AnimatePresence>
-        {showUserMissionProgress && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4"
-            onClick={() => setShowUserMissionProgress(false)}
-          >
-            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <MissionProgress level={currentLevel} />
-              <button
-                onClick={() => setShowUserMissionProgress(false)}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-[#0052FF] to-[#00D4FF] text-white rounded-xl font-bold hover:opacity-90"
-              >
-                🎯 CLOSE MISSIONS
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1192,49 +1060,73 @@ export default function BaseMemoryGame() {
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
+            onClick={() => !isMintPending && setShowMintModal(false)}
           >
             <motion.div 
               initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
+              className={`w-full max-w-sm rounded-3xl p-7 border ${
+                isDarkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
+              } relative`}
+              onClick={(e) => e.stopPropagation()}
             >
-              <button onClick={() => setShowMintModal(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Mint Modal">
+              <button 
+                onClick={() => setShowMintModal(false)} 
+                className={`absolute top-5 right-5 p-2 ${
+                  isDarkMode ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-700'
+                }`}
+                disabled={isMintPending || isConfirming}
+              >
                 <X size={22} />
               </button>
               
               <div className="text-center mb-6">
-                <div className="text-5xl mb-4">{mintingLevel ? getPremiumDetails(mintingLevel).emoji : '🪙'}</div>
-                <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} mb-2`}>
-                  {isMintConfirmed ? 'NFT Minted Successfully!' : 
-                   isConfirming ? 'Confirming Transaction...' : 
-                   isMintPending ? 'Minting in Progress...' : 
-                   'Mint Your NFT'}
+                <div className="text-5xl mb-4">🪙</div>
+                <h3 className={`text-xl font-black mb-2 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {isMintConfirmed ? 'NFT Minted!' : 
+                   isConfirming ? 'Confirming...' : 
+                   isMintPending ? 'Minting...' : 
+                   'Mint NFT'}
                 </h3>
-                <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {isMintConfirmed ? `Your ${mintingLevel ? getPremiumDetails(mintingLevel).name : 'NFT'} is now in your wallet!` :
+                <p className={`text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {isMintConfirmed ? 'Your NFT is now in your wallet!' :
                    isConfirming ? 'Waiting for blockchain confirmation...' :
-                   isMintPending ? 'Please confirm the transaction in your wallet' :
-                   `Mint ${mintingLevel ? getPremiumDetails(mintingLevel).name : 'NFT'} to your wallet`}
+                   isMintPending ? 'Please confirm in your wallet' :
+                   'Mint your NFT reward'}
                 </p>
               </div>
               
               {mintError && (
-                <div className={`p-4 rounded-xl mb-6 ${isDarkMode ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-100'} border`}>
-                  <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
+                <div className={`p-4 rounded-xl mb-6 ${
+                  isDarkMode ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-100'
+                } border`}>
+                  <p className={`text-sm ${
+                    isDarkMode ? 'text-red-300' : 'text-red-700'
+                  }`}>
                     Error: {mintError.message}
                   </p>
                 </div>
               )}
               
               {mintTransactionHash && (
-                <div className={`p-4 rounded-xl mb-6 ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'} border`}>
-                  <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} mb-2`}>
+                <div className={`p-4 rounded-xl mb-6 ${
+                  isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'
+                } border`}>
+                  <p className={`text-sm mb-2 ${
+                    isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                  }`}>
                     Transaction: {mintTransactionHash.slice(0, 10)}...{mintTransactionHash.slice(-8)}
                   </p>
                   <a 
                     href={`https://basescan.org/tx/${mintTransactionHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`text-xs ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} underline`}
+                    className={`text-xs underline ${
+                      isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
+                    }`}
                   >
                     View on Basescan ↗
                   </a>
@@ -1246,16 +1138,21 @@ export default function BaseMemoryGame() {
                   <button
                     onClick={() => mintingLevel && mintNFT(mintingLevel)}
                     disabled={isMintPending}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isMintPending ? 'Minting...' : 'Mint NFT'}
+                    {isMintPending ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 size={18} className="animate-spin" />
+                        Minting...
+                      </div>
+                    ) : 'Mint NFT Now'}
                   </button>
                 )}
                 
                 {isMintConfirmed && (
                   <button
                     onClick={() => setShowMintModal(false)}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-opacity"
                   >
                     ✅ Done
                   </button>
@@ -1272,20 +1169,41 @@ export default function BaseMemoryGame() {
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowLearning(false)}
           >
             <motion.div 
               initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
+              className={`w-full max-w-sm rounded-3xl p-7 border ${
+                isDarkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
+              } relative`}
+              onClick={(e) => e.stopPropagation()}
             >
-              <button onClick={() => setShowLearning(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`} title="Close Learning Modal"><X size={22}/></button>
-              <div className={`w-14 h-14 ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'} rounded-2xl flex items-center justify-center mb-5`}>
-                {LEVEL_LEARNING[currentLevel]?.icon}
+              <button onClick={() => setShowLearning(false)} className={`absolute top-5 right-5 p-2 ${
+                isDarkMode ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-700'
+              }`}>
+                <X size={22}/>
+              </button>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 ${
+                isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'
+              }`}>
+                <Globe className="text-blue-400" size={24} />
               </div>
-              <h3 className={`text-xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{LEVEL_LEARNING[currentLevel]?.title}</h3>
-              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-sm leading-relaxed mb-7`}>{LEVEL_LEARNING[currentLevel]?.content}</p>
-              <div className={`${isDarkMode ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'} border rounded-2xl p-5`}>
+              <h3 className={`text-xl font-black mb-3 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>Learn About Base</h3>
+              <p className={`text-sm leading-relaxed mb-7 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Base is a secure, low-cost, builder-friendly Ethereum L2 built to bring the next billion users onchain.
+                It's incubated within Coinbase, leveraging 10 years of crypto experience.
+              </p>
+              <div className={`border rounded-2xl p-5 ${
+                isDarkMode ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'
+              }`}>
                 <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest block mb-2">Onchain Tip</span>
-                <p className={`text-xs ${isDarkMode ? 'text-white/80' : 'text-slate-700'} italic`}>&quot;{LEVEL_LEARNING[currentLevel]?.funFact}&quot;</p>
+                <p className={`text-xs italic ${
+                  isDarkMode ? 'text-white/80' : 'text-gray-700'
+                }`}>&quot;Base has never been hacked thanks to its rigorous security protocols.&quot;</p>
               </div>
             </motion.div>
           </motion.div>
@@ -1298,15 +1216,21 @@ export default function BaseMemoryGame() {
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowLevelSelect(false)}
           >
             <motion.div 
               initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}
+              className={`w-full max-w-sm rounded-3xl p-7 border ${
+                isDarkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-gray-200'
+              }`}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold">Select Level</h3>
+                <h3 className={`text-lg font-bold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>Select Level</h3>
                 <button onClick={() => setShowLevelSelect(false)} className="p-1">
-                  <X size={20} />
+                  <X size={20} className={isDarkMode ? "text-white" : "text-gray-900"} />
                 </button>
               </div>
               
@@ -1323,13 +1247,15 @@ export default function BaseMemoryGame() {
                       disabled={!isUnlocked}
                       className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
                         isCurrent 
-                          ? 'bg-blue-600' 
+                          ? 'bg-blue-600 text-white' 
                           : isCompleted 
-                            ? 'bg-green-600/30' 
+                            ? 'bg-green-600/30 text-green-400' 
                             : isUnlocked 
-                              ? 'bg-white/5 hover:bg-white/10' 
-                              : 'bg-white/5 opacity-30'
-                      } ${!isUnlocked && 'cursor-not-allowed'}`}
+                              ? 'hover:bg-opacity-20' 
+                              : 'opacity-30'
+                      } ${!isUnlocked && 'cursor-not-allowed'} ${
+                        isDarkMode ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-900'
+                      }`}
                     >
                       {isCompleted ? (
                         <CheckCircle size={20} className="text-green-400" />
@@ -1343,72 +1269,11 @@ export default function BaseMemoryGame() {
                 })}
               </div>
               
-              <div className="mt-6 text-center text-sm text-gray-400">
+              <div className={`mt-6 text-center text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 {completedLevels.length}/10 levels completed
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* REST OF THE MODALS REMAIN THE SAME (Quiz Modal, Win Celebration, etc.) */}
-      <AnimatePresence>
-        {showQuiz && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ y: 100 }} animate={{ y: 0 }}
-              className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-3xl p-7 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} relative`}
-            >
-              <button onClick={() => setShowQuiz(false)} className={`absolute top-5 right-5 p-2 ${isDarkMode ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}>
-                <X size={22} />
-              </button>
-              
-              <h3 className={`text-xl font-black mb-5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                🎓 Base Quiz
-              </h3>
-
-              {currentQuiz && (
-                <div className="space-y-5">
-                  <p className={`${isDarkMode ? 'text-slate-300' : 'text-slate-700'} text-sm`}>{currentQuiz.question}</p>
-                  
-                  <input
-                    type="text"
-                    value={quizAnswer}
-                    onChange={(e) => setQuizAnswer(e.target.value)}
-                    placeholder="Type your answer..."
-                    className={`w-full p-4 ${isDarkMode ? 'bg-slate-800 border-white/10' : 'bg-slate-100 border-slate-200'} border rounded-xl ${isDarkMode ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-500'} text-sm`}
-                    onKeyDown={(e) => e.key === 'Enter' && submitQuizAnswer()}
-                  />
-                  
-                  {quizFeedback && (
-                    <div className={`p-4 rounded-xl ${
-                      quizFeedback.includes('✅') 
-                        ? isDarkMode ? 'bg-green-500/10 text-green-300' : 'bg-green-50 text-green-700'
-                        : isDarkMode ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-700'
-                    }`}>
-                      {quizFeedback}
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-4">
-                    <button
-                      onClick={submitQuizAnswer}
-                      className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-xl font-bold hover:scale-105 transition-transform text-sm text-white"
-                    >
-                      Submit
-                    </button>
-                    <button
-                      onClick={() => setShowQuiz(false)}
-                      className={`px-5 py-4 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} rounded-xl font-bold transition-colors text-sm`}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
             </motion.div>
           </motion.div>
         )}
@@ -1420,17 +1285,24 @@ export default function BaseMemoryGame() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-blue-600/20 backdrop-blur-md"
+            onClick={() => setShowCelebration(false)}
           >
-            <div className={`w-full max-w-sm ${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-9 text-center ${isDarkMode ? 'text-white' : 'text-slate-900'} shadow-2xl`}>
-              <div className="text-7xl mb-5">{currentTier.emoji}</div>
-              <h2 className="text-3xl font-black mb-3 italic">{currentTier.name} Unlocked!</h2>
-              <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-medium mb-7`}>You mastered Level {currentLevel} in {moves} moves.</p>
+            <div className={`w-full max-w-sm rounded-[2.5rem] p-9 text-center shadow-2xl ${
+              isDarkMode ? 'bg-slate-900 text-white' : 'bg-white text-gray-900'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-7xl mb-5">🏆</div>
+              <h2 className="text-3xl font-black mb-3 italic">Level {currentLevel} Complete!</h2>
+              <p className={`font-medium mb-7 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>You mastered this level in {moves} moves.</p>
               
               <div className="flex justify-center gap-3 mb-7">
                 {[1, 2, 3].map((star) => (
                   <div
                     key={star}
-                    className={`text-3xl ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-slate-700' : 'text-slate-300'}`}
+                    className={`text-3xl ${star <= currentStars ? 'text-yellow-400' : isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}
                   >
                     ★
                   </div>
@@ -1438,14 +1310,26 @@ export default function BaseMemoryGame() {
               </div>
               
               <div className="grid grid-cols-2 gap-4 mb-9">
-                <div className={`p-5 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <span className={`block text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} uppercase`}>Points</span>
-                  <span className="text-xl font-black text-blue-500">+{config.points}</span>
+                <div className={`p-5 rounded-3xl ${
+                  isDarkMode ? 'bg-slate-800' : 'bg-gray-100'
+                }`}>
+                  <span className={`block text-[10px] font-bold uppercase ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Points</span>
+                  <span className={`text-xl font-black ${
+                    isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                  }`}>+{config.points}</span>
                 </div>
-                <div className={`p-5 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <span className={`block text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'} uppercase`}>Rarity</span>
-                  <span className={`text-xl font-black ${currentTier.rarity === 'GODLIKE' ? 'text-yellow-500' : 'text-green-500'}`}>
-                    {currentTier.rarity}
+                <div className={`p-5 rounded-3xl ${
+                  isDarkMode ? 'bg-slate-800' : 'bg-gray-100'
+                }`}>
+                  <span className={`block text-[10px] font-bold uppercase ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Reward</span>
+                  <span className={`text-xl font-black ${
+                    isDarkMode ? 'text-green-400' : 'text-green-600'
+                  }`}>
+                    NFT
                   </span>
                 </div>
               </div>
@@ -1454,14 +1338,14 @@ export default function BaseMemoryGame() {
                 {currentLevel < 10 ? (
                   <button 
                     onClick={nextLevel}
-                    className="w-full bg-blue-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                    className="w-full bg-blue-500 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                   >
                     Next Level <ChevronRight size={20}/>
                   </button>
                 ) : (
                   <button 
                     onClick={() => setShowCelebration(false)}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform"
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-opacity"
                   >
                     🎉 All 10 Levels Complete!
                   </button>
@@ -1472,7 +1356,11 @@ export default function BaseMemoryGame() {
                     setShowCelebration(false);
                     setShowUserNFTCollection(true);
                   }}
-                  className={`w-full ${isDarkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'} font-bold py-4 rounded-2xl transition-colors`}
+                  className={`w-full font-bold py-4 rounded-2xl transition-colors ${
+                    isDarkMode 
+                      ? 'bg-slate-800 text-white hover:bg-slate-700' 
+                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  }`}
                 >
                   View in Collection
                 </button>
@@ -1481,6 +1369,19 @@ export default function BaseMemoryGame() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Other Modals */}
+      <NFTCollectionModal
+        isOpen={showUserNFTCollection}
+        onClose={() => setShowUserNFTCollection(false)}
+        currentLevel={Math.max(...completedLevels, 1)}
+      />
+
+      <MissionProgress
+        isOpen={showUserMissionProgress}
+        onClose={() => setShowUserMissionProgress(false)}
+        level={currentLevel}
+      />
     </div>
   );
 }
