@@ -65,7 +65,7 @@ const NFT_CONTRACT_ABI = [
 // ============================
 // ENHANCED ANIMATED BACKGROUND (UPDATED)
 // ============================
-const EnhancedBackground = ({ isDarkMode }) => {
+const EnhancedBackground = ({ isDarkMode }: { isDarkMode: boolean }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
