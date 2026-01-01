@@ -19,6 +19,12 @@ export default function WagmiProviderWrapper({ children }: PropsWithChildren) {
         // The default export is the SDK instance with methods
         const isInMiniApp = await MiniAppSDK.isInMiniApp();
         console.log("Is in Mini App:", isInMiniApp);
+        
+        // Call sdk.actions.ready() to dismiss the splash screen
+        if (isInMiniApp) {
+          await MiniAppSDK.actions.ready();
+        }
+        
         setIsMiniAppReady(true);
       } catch (error) {
         console.error("Farcaster Mini App SDK error:", error);
