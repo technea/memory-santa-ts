@@ -619,7 +619,7 @@ export default function BaseMemoryGame() {
         } catch (injectedError) {
           console.log('Injected wallet not available, trying WalletConnect...');
           // Fallback to WalletConnect
-          await connect({ connector: walletConnect() });
+          await connect({ connector: walletConnect({ projectId: 'YOUR_WALLETCONNECT_PROJECT_ID' }) });
         }
       }
     } catch (e) { 
